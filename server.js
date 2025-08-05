@@ -20,8 +20,8 @@ app.use(express.static('public'));
 
 // Initialize Gemini AI with latest models
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-exp" }); // Gemini 2.5 Flash
-const embeddingModel = genAI.getGenerativeModel({ model: "text-embedding-004" }); // Gemini Embeddings 001
+const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash-lite" }); // Gemini 2.5 Flash Lite
+const embeddingModel = genAI.getGenerativeModel({ model: "text-embedding-001" }); // Gemini Embeddings 001
 
 // Import knowledge base services
 const EmbeddingService = require('./knowledge-base/embeddings');
