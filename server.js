@@ -222,7 +222,7 @@ async function generateAIResponse(userMessage, conversationHistory = []) {
     if (knowledgeResults.length === 0) {
       return {
         type: 'no_knowledge',
-        message: "That's a great question! I don't have specific details about that in my current knowledge base, but our sales team would be the perfect people to help you with that. Would you like me to connect you with one of them?",
+        message: "That's a great question! I don't have specific details about that in my current knowledge base, but our sales team would be the perfect people to help you with that.",
         reason: "No relevant knowledge found",
         intent: 'unknown',
         category: 'general'
@@ -527,13 +527,6 @@ async function handleCustomerMessage(ws, sessionId, message) {
     const aiResponse = await generateAIResponse(message, conversation.messages);
 
     if (aiResponse.type === 'handoff_suggestion' || aiResponse.type === 'no_knowledge') {
-      // Send the AI's response first
-      conversation.messages.push({
-        role: 'assistant',
-        content: aiResponse.message,
-        timestamp: new Date()
-      });
-
       // Log customer intent
       await knowledgeDB.logCustomerIntent(
         sessionId,
@@ -545,21 +538,13 @@ async function handleCustomerMessage(ws, sessionId, message) {
         aiResponse.type
       );
 
+      // Show AI response directly in handoff popup
       ws.send(JSON.stringify({
-        type: 'ai_response',
-        message: aiResponse.message,
-        sessionId
+        type: 'handoff_offer',
+        sessionId,
+        message: aiResponse.message + " Would you like to connect with our sales representative?",
+        reason: aiResponse.reason
       }));
-
-      // Then offer handoff with buttons
-      setTimeout(() => {
-        ws.send(JSON.stringify({
-          type: 'handoff_offer',
-          sessionId,
-          message: "Would you like to connect with our sales representative?",
-          reason: aiResponse.reason
-        }));
-      }, 1000);
 
       return;
     }
