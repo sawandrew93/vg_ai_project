@@ -173,11 +173,10 @@
             <!-- Handoff Confirmation Dialog -->
             <div id="handoff-dialog" class="handoff-dialog" style="display: none;">
               <div class="handoff-content">
-                <h4>Connect with Sales Representative?</h4>
-                <p id="handoff-message">Would you like to connect with our sales representative?</p>
+                <p id="handoff-message">I don't have specific information about that. I can connect you with a human agent if you'd like more detailed assistance.</p>
                 <div class="handoff-buttons">
-                  <button id="handoff-yes" class="handoff-btn handoff-yes">Yes, Connect Me</button>
-                  <button id="handoff-no" class="handoff-btn handoff-no">No, Continue with AI</button>
+                  <button id="handoff-yes" class="handoff-btn handoff-yes">Yes</button>
+                  <button id="handoff-no" class="handoff-btn handoff-no">No</button>
                 </div>
               </div>
             </div>

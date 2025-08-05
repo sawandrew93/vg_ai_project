@@ -203,6 +203,24 @@ async function generateAIResponse(userMessage, conversationHistory = []) {
       };
     }
 
+    // Handle meta questions about capabilities
+    const metaQuestions = ['what can you help', 'what can i ask', 'what do you know', 'what topics', 'what can you answer'];
+    const isMetaQuestion = metaQuestions.some(meta => 
+      userMessage.toLowerCase().includes(meta)
+    );
+
+    if (isMetaQuestion) {
+      // Get sample topics from knowledge base
+      const sampleResults = await knowledgeDB.getAllDocuments(10);
+      const topics = sampleResults.map(doc => doc.metadata?.category || 'General').filter((v, i, a) => a.indexOf(v) === i);
+      
+      return {
+        type: 'ai_response',
+        message: `I can help you with questions about: ${topics.length > 0 ? topics.join(', ') : 'our products and services'}. Feel free to ask me anything about these topics!`,
+        sources: []
+      };
+    }
+
     // First, search the knowledge base
     const knowledgeResults = await searchKnowledgeBase(userMessage);
 
@@ -213,7 +231,7 @@ async function generateAIResponse(userMessage, conversationHistory = []) {
     if (handoffAnalysis.needsHuman && handoffAnalysis.confidence > HANDOFF_THRESHOLD) {
       return {
         type: 'handoff_suggestion',
-        message: handoffAnalysis.suggestedResponse || "I'd be happy to connect you with one of our sales specialists who can give you personalized assistance. Would you like me to do that?",
+        message: handoffAnalysis.suggestedResponse || "I'd be happy to connect you with one of our sales specialists who can give you personalized assistance.",
         reason: handoffAnalysis.reason
       };
     }
@@ -222,7 +240,7 @@ async function generateAIResponse(userMessage, conversationHistory = []) {
     if (knowledgeResults.length === 0) {
       return {
         type: 'no_knowledge',
-        message: "That's a great question! I don't have specific details about that in my current knowledge base, but our sales team would be the perfect people to help you with that.",
+        message: "I don't have specific information about that. I can connect you with a human agent if you'd like more detailed assistance.",
         reason: "No relevant knowledge found",
         intent: 'unknown',
         category: 'general'
@@ -542,7 +560,7 @@ async function handleCustomerMessage(ws, sessionId, message) {
       ws.send(JSON.stringify({
         type: 'handoff_offer',
         sessionId,
-        message: aiResponse.message + " Would you like to connect with our sales representative?",
+        message: aiResponse.message,
         reason: aiResponse.reason
       }));
 
@@ -899,13 +917,7 @@ async function handleWebSocketMessage(ws, data) {
         } else {
           const conversation = conversations.get(data.sessionId);
           if (conversation && conversation.customerWs) {
-            // Add AI response to conversation history
-            conversation.messages.push({
-              role: 'assistant',
-              content: "No problem! I'm here to help. What else can I assist you with?",
-              timestamp: new Date()
-            });
-            
+            // Reset AI state - don't add to history to avoid loop
             conversation.customerWs.send(JSON.stringify({
               type: 'ai_response',
               message: "No problem! I'm here to help. What else can I assist you with?",
