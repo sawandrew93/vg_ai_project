@@ -1539,15 +1539,32 @@ app.get('/api/feedback', verifyToken, async (req, res) => {
   }
 });
 
-// Get customer intents
+// Get customer intents with filters
 app.get('/api/intents', verifyToken, async (req, res) => {
   try {
     const limit = parseInt(req.query.limit) || 50;
-    const { data, error } = await supabase
+    const offset = parseInt(req.query.offset) || 0;
+    
+    let query = supabase
       .from('customer_intents')
       .select('*')
-      .order('created_at', { ascending: false })
-      .limit(limit);
+      .order('created_at', { ascending: false });
+
+    // Apply filters
+    if (req.query.intent_category) {
+      query = query.eq('intent_category', req.query.intent_category);
+    }
+    if (req.query.response_type) {
+      query = query.eq('response_type', req.query.response_type);
+    }
+    if (req.query.date_from) {
+      query = query.gte('created_at', req.query.date_from);
+    }
+    if (req.query.date_to) {
+      query = query.lte('created_at', req.query.date_to + 'T23:59:59');
+    }
+
+    const { data, error } = await query.range(offset, offset + limit - 1);
 
     if (error) {
       return res.status(500).json({ error: error.message });

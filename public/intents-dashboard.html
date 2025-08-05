@@ -33,6 +33,10 @@
         .confidence-score.low { color: #c62828; }
         .loading { text-align: center; padding: 2rem; color: #666; }
         .no-data { text-align: center; padding: 2rem; color: #666; }
+        .filters { background: white; padding: 1rem; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 2rem; display: flex; gap: 1rem; flex-wrap: wrap; }
+        .filter-group { display: flex; flex-direction: column; gap: 0.5rem; }
+        .filter-group label { font-weight: 500; color: #333; }
+        .filter-group select, .filter-group input { padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px; }
         .btn { padding: 0.5rem 1rem; background: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer; text-decoration: none; display: inline-block; }
         .btn:hover { background: #218838; }
     </style>
@@ -47,6 +51,40 @@
     </div>
 
     <div class="container">
+        <div class="filters">
+            <div class="filter-group">
+                <label>Intent Category</label>
+                <select id="categoryFilter">
+                    <option value="">All Categories</option>
+                    <option value="general">General</option>
+                    <option value="pricing">Pricing</option>
+                    <option value="support">Support</option>
+                    <option value="trial">Trial</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>Response Type</label>
+                <select id="responseFilter">
+                    <option value="">All Types</option>
+                    <option value="ai_response">AI Response</option>
+                    <option value="handoff_suggestion">Handoff Suggested</option>
+                    <option value="no_knowledge">No Knowledge</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>Date From</label>
+                <input type="date" id="dateFrom">
+            </div>
+            <div class="filter-group">
+                <label>Date To</label>
+                <input type="date" id="dateTo">
+            </div>
+            <div class="filter-group">
+                <label>&nbsp;</label>
+                <button onclick="applyFilters()" class="btn">Apply Filters</button>
+            </div>
+        </div>
+
         <div class="stats" id="stats">
             <div class="stat-card">
                 <div class="stat-number" id="totalIntents">-</div>
@@ -95,7 +133,20 @@
                     return;
                 }
 
-                const response = await fetch('/api/intents', {
+                const params = new URLSearchParams({ limit: 50 });
+
+                // Add filters
+                const categoryFilter = document.getElementById('categoryFilter').value;
+                const responseFilter = document.getElementById('responseFilter').value;
+                const dateFrom = document.getElementById('dateFrom').value;
+                const dateTo = document.getElementById('dateTo').value;
+
+                if (categoryFilter) params.append('intent_category', categoryFilter);
+                if (responseFilter) params.append('response_type', responseFilter);
+                if (dateFrom) params.append('date_from', dateFrom);
+                if (dateTo) params.append('date_to', dateTo);
+
+                const response = await fetch(`/api/intents?${params}`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
 
@@ -109,6 +160,10 @@
                 document.getElementById('intentsTableBody').innerHTML = 
                     '<tr><td colspan="7" class="no-data">Error loading intents</td></tr>';
             }
+        }
+
+        function applyFilters() {
+            loadIntents();
         }
 
         function displayIntents(intents) {

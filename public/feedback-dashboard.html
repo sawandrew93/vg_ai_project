@@ -197,7 +197,7 @@
                             ${item.interaction_type === 'ai_only' ? 'AI Only' : 'Human Agent'}
                         </span>
                     </td>
-                    <td>${item.agent_name || '-'}</td>
+                    <td>${item.agent_name || (item.interaction_type === 'ai_only' ? 'AI Assistant' : '-')}</td>
                     <td>
                         <div class="feedback-text" title="${item.feedback_text || ''}">
                             ${item.feedback_text || 'No feedback text'}
