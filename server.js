@@ -1381,6 +1381,10 @@ app.get('/feedback', (req, res) => {
   res.sendFile(path.join(__dirname, 'public/feedback-dashboard.html'));
 });
 
+app.get('/intents', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public/intents-dashboard.html'));
+});
+
 // Test knowledge base endpoint
 app.get('/test-kb', async (req, res) => {
   try {
