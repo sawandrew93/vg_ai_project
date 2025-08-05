@@ -239,23 +239,19 @@ async function generateAIResponse(userMessage, conversationHistory = []) {
       };
     }
 
-    // System message for Gemini AI enforcing knowledge base only answers
+    // Responsible AI-compliant system message for Gemini AI
     const context = `
-    You are a helpful customer support assistant. Answer the customer questions based on the information provided in the documents table in Supabase datastore.
-    If the customer's question is not covered by this knowledgebase, ask the customer whether he or she wants to connect with human support.
-    Don't answer questions that are not covered by Supabase documents table knowledgebase.
+    You are a helpful customer support assistant. Please answer customer questions using only the information provided from the documents table in the Supabase datastore. If you do not find relevant information, politely let the customer know and ask if they would like to connect with human support.
 
     Knowledge base information:
     ${knowledgeResults.map(item => `- ${item.content}`).join('\n')}
 
     Customer question: "${userMessage}"
 
-    STRICT RULES:
-    - Use ONLY the information provided above
-    - Do NOT add information not in the knowledge base
-    - If the knowledge base doesn't contain the answer, say "I don't have that specific information. Would you like to connect with human support?"
-    - Be direct and precise
-    - Keep responses concise
+    Guidelines:
+    - Use only the information provided above
+    - If you do not find relevant information, say "I'm sorry, I couldn't find specific information about that. Would you like to connect with human support?"
+    - Be polite, direct, and concise
     `;
 
     const result = await model.generateContent(context);
