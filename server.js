@@ -798,9 +798,9 @@ function handleEndChat(sessionId, endReason = 'agent_ended') {
 
   saveChatHistory(sessionId, endReason);
 
-  // Notify customer if session ended by agent
+  // Notify customer and show survey if session had human agent
   if (conversation.customerWs && conversation.customerWs.readyState === WebSocket.OPEN && endReason !== 'agent_timeout') {
-    if (endReason === 'agent_ended') {
+    if (endReason === 'agent_ended' || endReason === 'customer_ended') {
       sendSatisfactionSurvey(conversation.customerWs, sessionId);
     }
 
