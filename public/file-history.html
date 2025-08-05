@@ -304,6 +304,7 @@
                 <div class="filter-actions">
                     <button class="btn btn-primary" onclick="loadFiles()">Apply Filters</button>
                     <button class="btn btn-secondary" onclick="clearFilters()">Clear</button>
+                    <button class="btn btn-danger" onclick="deleteSelected()" id="delete-btn" style="display: none; background: #dc3545;">Delete Selected</button>
                 </div>
             </div>
         </div>
@@ -380,7 +381,10 @@
             container.innerHTML = files.map(file => `
                 <div class="file-card">
                     <div class="file-header">
-                        <div class="file-name">📎 ${file.original_filename}</div>
+                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                            <input type="checkbox" class="file-checkbox" data-file-id="${file.id}" onchange="updateDeleteButton()">
+                            <div class="file-name">📎 ${file.original_filename}</div>
+                        </div>
                         <div class="file-meta">
                             <span>${formatFileSize(file.file_size)}</span>
                             <span>${formatDate(file.uploaded_at)}</span>
@@ -435,6 +439,44 @@
             document.getElementById('date-from').value = '';
             document.getElementById('date-to').value = '';
             loadFiles();
+        }
+
+        function updateDeleteButton() {
+            const checkboxes = document.querySelectorAll('.file-checkbox:checked');
+            const deleteBtn = document.getElementById('delete-btn');
+            deleteBtn.style.display = checkboxes.length > 0 ? 'inline-block' : 'none';
+        }
+
+        async function deleteSelected() {
+            const checkboxes = document.querySelectorAll('.file-checkbox:checked');
+            const fileIds = Array.from(checkboxes).map(cb => cb.dataset.fileId);
+            
+            if (fileIds.length === 0) return;
+            
+            if (!confirm(`Are you sure you want to delete ${fileIds.length} file(s)? This cannot be undone.`)) {
+                return;
+            }
+
+            try {
+                const token = localStorage.getItem('agentToken');
+                const response = await fetch('/api/delete-attachments', {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ fileIds })
+                });
+
+                if (response.ok) {
+                    loadFiles(); // Reload the files
+                } else {
+                    alert('Error deleting files. Please try again.');
+                }
+            } catch (error) {
+                console.error('Error deleting files:', error);
+                alert('Error deleting files. Please try again.');
+            }
         }
 
         // Load files on page load

@@ -1717,6 +1717,57 @@ app.get('/api/file-history', verifyToken, async (req, res) => {
   }
 });
 
+// Delete selected attachments
+app.delete('/api/delete-attachments', verifyToken, async (req, res) => {
+  try {
+    const { fileIds } = req.body;
+    
+    if (!fileIds || !Array.isArray(fileIds) || fileIds.length === 0) {
+      return res.status(400).json({ error: 'No file IDs provided' });
+    }
+
+    // Get file info before deletion for cleanup
+    const { data: files, error: fetchError } = await supabase
+      .from('customer_attachments')
+      .select('filename')
+      .in('id', fileIds);
+
+    if (fetchError) {
+      return res.status(500).json({ error: fetchError.message });
+    }
+
+    // Delete from database
+    const { error: deleteError } = await supabase
+      .from('customer_attachments')
+      .delete()
+      .in('id', fileIds);
+
+    if (deleteError) {
+      return res.status(500).json({ error: deleteError.message });
+    }
+
+    // Delete physical files
+    const fs = require('fs');
+    const path = require('path');
+    
+    files.forEach(file => {
+      try {
+        const filePath = path.join(__dirname, 'uploads', file.filename);
+        if (fs.existsSync(filePath)) {
+          fs.unlinkSync(filePath);
+        }
+      } catch (error) {
+        console.error(`Error deleting file ${file.filename}:`, error);
+      }
+    });
+
+    res.json({ success: true, deletedCount: fileIds.length });
+  } catch (error) {
+    console.error('Error deleting attachments:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // Initialize and start server
 async function startServer() {
   await initializeAgentUsers();

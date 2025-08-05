@@ -880,6 +880,8 @@
             this.isConnectedToHuman = true;
             this.updateConnectionStatus('Human Agent', 'Session restored');
             document.getElementById('request-human').disabled = true;
+            document.getElementById('file-upload').style.display = 'inline-block';
+          } else {
             document.getElementById('file-upload').style.display = 'none';
           }
           break;
@@ -901,7 +903,7 @@
           this.updateConnectionStatus('Human Agent', 'Connected to agent');
           this.addMessage(message, 'system');
           document.getElementById('request-human').disabled = true;
-          document.getElementById('file-upload').style.display = 'none';
+          document.getElementById('file-upload').style.display = 'inline-block';
           this.saveConnectionState();
           break;
 
@@ -916,7 +918,7 @@
           this.updateConnectionStatus('AI Assistant', 'Back to AI');
           this.addMessage(message, 'system');
           document.getElementById('request-human').disabled = false;
-          document.getElementById('file-upload').style.display = 'inline-block';
+          document.getElementById('file-upload').style.display = 'none';
           this.saveConnectionState();
           break;
 
