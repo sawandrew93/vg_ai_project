@@ -1417,6 +1417,10 @@ app.get('/intents', (req, res) => {
   res.sendFile(path.join(__dirname, 'public/intents-dashboard.html'));
 });
 
+app.get('/files', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public/file-history.html'));
+});
+
 // Test knowledge base endpoint
 app.get('/test-kb', async (req, res) => {
   try {
@@ -1671,6 +1675,44 @@ app.get('/api/intents', verifyToken, async (req, res) => {
     res.json(data || []);
   } catch (error) {
     console.error('Error fetching intents:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Get file history with filters
+app.get('/api/file-history', verifyToken, async (req, res) => {
+  try {
+    const limit = parseInt(req.query.limit) || 100;
+    const offset = parseInt(req.query.offset) || 0;
+    
+    let query = supabase
+      .from('customer_attachments')
+      .select('*')
+      .order('uploaded_at', { ascending: false });
+
+    // Apply filters
+    if (req.query.session_id) {
+      query = query.eq('session_id', req.query.session_id);
+    }
+    if (req.query.file_type) {
+      query = query.like('file_type', `${req.query.file_type}%`);
+    }
+    if (req.query.date_from) {
+      query = query.gte('uploaded_at', req.query.date_from);
+    }
+    if (req.query.date_to) {
+      query = query.lte('uploaded_at', req.query.date_to + 'T23:59:59');
+    }
+
+    const { data, error } = await query.range(offset, offset + limit - 1);
+
+    if (error) {
+      return res.status(500).json({ error: error.message });
+    }
+
+    res.json(data || []);
+  } catch (error) {
+    console.error('Error fetching file history:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
