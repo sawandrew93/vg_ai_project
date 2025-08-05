@@ -165,9 +165,11 @@
             <div class="chat-input-container">
               <input type="text" id="chat-input" placeholder="Type your message..." />
               <input type="file" id="file-input" style="display: none;" accept="image/*,.pdf,.doc,.docx,.txt">
-              <button id="chat-send">Send</button>
-              <button id="file-upload" title="Attach file">📎</button>
-              <button id="request-human" title="Request human support">👤</button>
+              <div class="button-group">
+                <button id="chat-send">Send</button>
+                <button id="file-upload" title="Attach file" style="display: none;">📁 Attach</button>
+                <button id="request-human" title="Request human support">👤 Human</button>
+              </div>
             </div>
             
             <div id="file-preview" class="file-preview" style="display: none;">
@@ -413,19 +415,27 @@
           padding: 16px;
           border-top: 1px solid #eee;
           display: flex;
+          flex-direction: column;
+          gap: 8px;
+        }
+
+        .button-group {
+          display: flex;
           gap: 8px;
         }
 
         #chat-input {
-          flex: 1;
+          width: 100%;
           padding: 12px;
           border: 1px solid #ddd;
           border-radius: 20px;
           outline: none;
           font-size: 14px;
+          box-sizing: border-box;
         }
 
-        #chat-send, #request-human {
+        #chat-send {
+          flex: 1;
           padding: 12px 16px;
           background: ${this.options.primaryColor};
           color: white;
@@ -437,17 +447,27 @@
         }
 
         #request-human {
-          padding: 12px;
-        }
-
-        #file-upload {
-          background: #6c757d;
+          padding: 12px 16px;
+          background: #28a745;
           color: white;
-          padding: 12px;
           border: none;
           border-radius: 20px;
           cursor: pointer;
           font-size: 14px;
+          transition: all 0.3s ease;
+          white-space: nowrap;
+        }
+
+        #file-upload {
+          background: #17a2b8;
+          color: white;
+          padding: 12px 16px;
+          border: none;
+          border-radius: 20px;
+          cursor: pointer;
+          font-size: 14px;
+          transition: all 0.3s ease;
+          white-space: nowrap;
         }
 
         .file-preview {
@@ -499,14 +519,16 @@
           text-decoration: underline;
         }
 
-        #request-human:hover, #file-upload:hover {
-          transform: scale(1.05);
+        #chat-send:hover, #request-human:hover, #file-upload:hover {
+          transform: translateY(-1px);
+          box-shadow: 0 2px 8px rgba(0,0,0,0.2);
         }
 
         #request-human:disabled, #file-upload:disabled {
           opacity: 0.5;
           cursor: not-allowed;
           transform: none;
+          box-shadow: none;
         }
 
         /* Handoff Dialog Styles */
