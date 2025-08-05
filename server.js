@@ -239,20 +239,17 @@ async function generateAIResponse(userMessage, conversationHistory = []) {
       };
     }
 
-    // Responsible AI-compliant system message for Gemini AI
-    const context = `
-    You are a helpful customer support assistant. Please answer customer questions using only the information provided from the documents table in the Supabase datastore. If you do not find relevant information, politely let the customer know and ask if they would like to connect with human support.
-
-    Knowledge base information:
-    ${knowledgeResults.map(item => `- ${item.content}`).join('\n')}
-
-    Customer question: "${userMessage}"
-
-    Guidelines:
-    - Use only the information provided above
-    - If you do not find relevant information, say "I'm sorry, I couldn't find specific information about that. Would you like to connect with human support?"
-    - Be polite, direct, and concise
-    `;
+    // Responsible AI-compliant system message for Gemini AI (read from .env)
+    let systemMessage = process.env.GEMINI_SYSTEM_MESSAGE;
+    if (!systemMessage) {
+      // Fallback to default if not set
+      systemMessage = `You are a helpful customer support assistant. Please answer customer questions using only the information provided from the documents table in the Supabase datastore. If you do not find relevant information, politely let the customer know and ask if they would like to connect with human support.\n\nKnowledge base information:\n${knowledgeResults.map(item => `- ${item.content}`).join('\n')}\n\nCustomer question: \"${userMessage}\"\n\nGuidelines:\n- Use only the information provided above\n- If you do not find relevant information, say \"I'm sorry, I couldn't find specific information about that. Would you like to connect with human support?\"\n- Be polite, direct, and concise\n`;
+    } else {
+      // Replace template variables in systemMessage
+      systemMessage = systemMessage.replace(/\$\{knowledgeResults\}/g, knowledgeResults.map(item => `- ${item.content}`).join('\n'));
+      systemMessage = systemMessage.replace(/\$\{userMessage\}/g, userMessage);
+    }
+    const context = systemMessage;
 
     const result = await model.generateContent(context);
     const responseText = result.response.text();
