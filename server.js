@@ -192,13 +192,13 @@ async function generateAIResponse(userMessage, conversationHistory = []) {
     // Handle greeting messages with friendly responses
     const greetings = ['hi', 'hello', 'hey', 'good morning', 'good afternoon', 'good evening'];
     const isGreeting = greetings.some(greeting => 
-      userMessage.toLowerCase().includes(greeting) && userMessage.length < 20
-    );
+      userMessage.toLowerCase().trim() === greeting || userMessage.toLowerCase().includes(greeting + ' ') || userMessage.toLowerCase().includes(' ' + greeting)
+    ) && userMessage.length < 30;
 
-    if (isGreeting && conversationHistory.length <= 1) {
+    if (isGreeting) {
       return {
         type: 'ai_response',
-        message: "Hi there! 👋 Welcome! I'm here to help you learn about our products and services. What can I assist you with today?",
+        message: "Hi there! 👋 How can I help you today?",
         sources: []
       };
     }
