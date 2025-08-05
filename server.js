@@ -1377,6 +1377,10 @@ app.get('/knowledge-base', (req, res) => {
   res.sendFile(path.join(__dirname, 'public/knowledge-base.html'));
 });
 
+app.get('/feedback', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public/feedback-dashboard.html'));
+});
+
 // Test knowledge base endpoint
 app.get('/test-kb', async (req, res) => {
   try {
@@ -1493,15 +1497,32 @@ app.get('/chat-history', verifyToken, (req, res) => {
   res.json(recentChats);
 });
 
-// Get customer feedback
+// Get customer feedback with filters
 app.get('/api/feedback', verifyToken, async (req, res) => {
   try {
     const limit = parseInt(req.query.limit) || 50;
-    const { data, error } = await supabase
+    const offset = parseInt(req.query.offset) || 0;
+    
+    let query = supabase
       .from('customer_feedback')
       .select('*')
-      .order('created_at', { ascending: false })
-      .limit(limit);
+      .order('created_at', { ascending: false });
+
+    // Apply filters
+    if (req.query.interaction_type) {
+      query = query.eq('interaction_type', req.query.interaction_type);
+    }
+    if (req.query.rating) {
+      query = query.eq('rating', parseInt(req.query.rating));
+    }
+    if (req.query.date_from) {
+      query = query.gte('created_at', req.query.date_from);
+    }
+    if (req.query.date_to) {
+      query = query.lte('created_at', req.query.date_to + 'T23:59:59');
+    }
+
+    const { data, error } = await query.range(offset, offset + limit - 1);
 
     if (error) {
       return res.status(500).json({ error: error.message });
@@ -1510,6 +1531,27 @@ app.get('/api/feedback', verifyToken, async (req, res) => {
     res.json(data);
   } catch (error) {
     console.error('Error fetching feedback:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Get customer intents
+app.get('/api/intents', verifyToken, async (req, res) => {
+  try {
+    const limit = parseInt(req.query.limit) || 50;
+    const { data, error } = await supabase
+      .from('customer_intents')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(limit);
+
+    if (error) {
+      return res.status(500).json({ error: error.message });
+    }
+
+    res.json(data || []);
+  } catch (error) {
+    console.error('Error fetching intents:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
