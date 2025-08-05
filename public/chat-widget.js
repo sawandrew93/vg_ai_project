@@ -168,7 +168,7 @@
               <div class="button-group">
                 <button id="chat-send">Send</button>
                 <button id="file-upload" title="Attach file" style="display: none;">📁 Attach</button>
-                <button id="request-human" title="Request human support">👤 Human</button>
+                <button id="request-human" title="Request human support">👤</button>
               </div>
             </div>
             
@@ -447,7 +447,7 @@
         }
 
         #request-human {
-          padding: 12px 16px;
+          padding: 12px;
           background: #28a745;
           color: white;
           border: none;
@@ -455,7 +455,7 @@
           cursor: pointer;
           font-size: 14px;
           transition: all 0.3s ease;
-          white-space: nowrap;
+          min-width: 44px;
         }
 
         #file-upload {
