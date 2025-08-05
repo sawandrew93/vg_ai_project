@@ -750,7 +750,7 @@ function handleAcceptRequest(sessionId, agentId) {
   if (conversation.customerWs && conversation.customerWs.readyState === WebSocket.OPEN) {
     conversation.customerWs.send(JSON.stringify({
       type: 'human_joined',
-      message: `${agentData.user.name} has joined the chat! How can I help you?`
+      message: `${agentData.user.name} has joined the chat!`
     }));
   }
 
