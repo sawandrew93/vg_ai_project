@@ -1223,7 +1223,7 @@ app.post('/api/knowledge-base/upload', verifyToken, upload.array('documents', 10
 app.get('/api/knowledge-base/documents', verifyToken, async (req, res) => {
   try {
     const limit = parseInt(req.query.limit) || 50;
-    const documents = await knowledgeDB.getAllDocuments(limit);
+    const documents = await knowledgeDB.getGroupedDocuments(limit);
     res.json(documents);
   } catch (error) {
     console.error('Get documents error:', error);
@@ -1234,8 +1234,15 @@ app.get('/api/knowledge-base/documents', verifyToken, async (req, res) => {
 // Delete document
 app.delete('/api/knowledge-base/documents/:id', verifyToken, async (req, res) => {
   try {
-    const id = parseInt(req.params.id);
-    await knowledgeDB.deleteDocument(id);
+    const filename = req.params.id;
+    if (filename.includes('.')) {
+      // Delete entire document group by filename
+      await knowledgeDB.deleteDocumentGroup(filename);
+    } else {
+      // Delete single chunk by ID
+      const id = parseInt(filename);
+      await knowledgeDB.deleteDocument(id);
+    }
     res.json({ success: true });
   } catch (error) {
     console.error('Delete document error:', error);

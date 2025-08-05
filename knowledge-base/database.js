@@ -95,6 +95,67 @@ class KnowledgeBaseDB {
     }
   }
 
+  async getGroupedDocuments(limit = 100) {
+    try {
+      const { data, error } = await this.supabase
+        .from('documents')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        throw error;
+      }
+
+      // Group by filename and show summary
+      const grouped = {};
+      data.forEach(doc => {
+        const filename = doc.metadata?.filename || doc.title;
+        if (!grouped[filename]) {
+          grouped[filename] = {
+            id: doc.id,
+            title: filename,
+            content: doc.content.substring(0, 200) + '...',
+            metadata: {
+              ...doc.metadata,
+              total_chunks: 0,
+              total_characters: 0
+            },
+            created_at: doc.created_at,
+            source_type: doc.source_type,
+            chunks: []
+          };
+        }
+        grouped[filename].chunks.push(doc);
+        grouped[filename].metadata.total_chunks++;
+        grouped[filename].metadata.total_characters += doc.content.length;
+      });
+
+      return Object.values(grouped).slice(0, limit);
+    } catch (error) {
+      console.error('❌ Error fetching grouped documents:', error);
+      throw error;
+    }
+  }
+
+  async deleteDocumentGroup(filename) {
+    try {
+      const { error } = await this.supabase
+        .from('documents')
+        .delete()
+        .eq('metadata->>filename', filename);
+
+      if (error) {
+        throw error;
+      }
+
+      console.log(`✅ Deleted all chunks for: ${filename}`);
+      return true;
+    } catch (error) {
+      console.error('❌ Error deleting document group:', error);
+      throw error;
+    }
+  }
+
   async deleteDocument(id) {
     try {
       const { error } = await this.supabase
