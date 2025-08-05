@@ -196,6 +196,7 @@ async function generateAIResponse(userMessage, conversationHistory = []) {
     ) && userMessage.length < 30;
 
     if (isGreeting) {
+      // For greetings, skip handoff analysis and return friendly response only
       return {
         type: 'ai_response',
         message: "Hi there! 👋 How can I help you today?",
@@ -224,7 +225,8 @@ async function generateAIResponse(userMessage, conversationHistory = []) {
     // First, search the knowledge base
     const knowledgeResults = await searchKnowledgeBase(userMessage);
 
-    // Check for handoff intent
+    // Only analyze handoff intent if not a greeting
+    // (already handled above)
     const handoffAnalysis = await analyzeHandoffIntent(userMessage, conversationHistory);
 
     // If high confidence handoff intent, return handoff suggestion
