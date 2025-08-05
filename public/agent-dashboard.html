@@ -315,6 +315,18 @@
                         this.updateStats({ totalAgents: data.totalAgents });
                         break;
 
+                    case 'session_ended_by_customer':
+                        this.handleSessionEndedByCustomer(data);
+                        break;
+
+                    case 'customer_left_queue':
+                        this.updateStats({ queueCount: data.remainingQueue });
+                        break;
+
+                    case 'session_no_longer_active':
+                        this.handleSessionNoLongerActive(data);
+                        break;
+
                     default:
                         console.log('Unhandled message type:', data.type);
                 }
@@ -410,6 +422,12 @@
                 const input = document.getElementById('agent-input');
                 const message = input.value.trim();
                 if (!message || !this.currentSession) return;
+
+                // Check if controls are disabled (session ended)
+                if (document.getElementById('agent-input').disabled) {
+                    this.addMessage('⚠️ Cannot send message - session has ended.', 'system-msg');
+                    return;
+                }
 
                 this.ws.send(JSON.stringify({
                     type: 'agent_message',
@@ -508,6 +526,41 @@
                 msgDiv.textContent = message;
                 messagesDiv.appendChild(msgDiv);
                 messagesDiv.scrollTop = messagesDiv.scrollHeight;
+            }
+
+            handleSessionEndedByCustomer(data) {
+                if (this.currentSession === data.sessionId) {
+                    this.addMessage('🔚 Customer has ended the session.', 'system-msg');
+                    
+                    // Disable input controls
+                    document.getElementById('agent-input').disabled = true;
+                    document.getElementById('send-btn').disabled = true;
+                    document.getElementById('canned-btn').disabled = true;
+                    document.getElementById('end-chat-btn').disabled = true;
+                    
+                    // Hide canned responses
+                    document.getElementById('canned-responses').style.display = 'none';
+                    
+                    // Clear current session
+                    this.currentSession = null;
+                    
+                    // Update stats
+                    this.updateStats({ activeChats: 0 });
+                    
+                    // Show ready message after a brief delay
+                    setTimeout(() => {
+                        this.addMessage('💤 Ready for next customer...', 'system-msg');
+                    }, 1000);
+                }
+            }
+
+            handleSessionNoLongerActive(data) {
+                if (this.currentSession === data.sessionId) {
+                    this.addMessage(`⚠️ ${data.message}`, 'system-msg');
+                    
+                    // Force end the session on agent side
+                    this.endChat();
+                }
             }
 
             updateStats(stats) {

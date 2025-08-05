@@ -766,6 +766,12 @@ function handleAgentMessage(sessionId, message, messageType = 'text') {
     return;
   }
 
+  // Check if session still has human agent assigned
+  if (!conversation.hasHuman || !conversation.assignedAgent) {
+    console.log('Cannot send agent message - session no longer has human agent');
+    return;
+  }
+
   conversation.messages.push({
     role: 'agent',
     content: message,
@@ -792,13 +798,18 @@ function handleEndChat(sessionId, endReason = 'agent_ended') {
 
   saveChatHistory(sessionId, endReason);
 
+  // Notify customer if session ended by agent
   if (conversation.customerWs && conversation.customerWs.readyState === WebSocket.OPEN && endReason !== 'agent_timeout') {
-    sendSatisfactionSurvey(conversation.customerWs, sessionId);
+    if (endReason === 'agent_ended') {
+      sendSatisfactionSurvey(conversation.customerWs, sessionId);
+    }
 
     setTimeout(() => {
       if (conversation.customerWs && conversation.customerWs.readyState === WebSocket.OPEN) {
         const message = endReason === 'agent_timeout'
           ? 'Your agent has been disconnected for too long. The chat has been ended. Feel free to start a new conversation!'
+          : endReason === 'customer_ended'
+          ? 'Session ended. Thank you for chatting with us!'
           : 'The agent has ended the chat. Feel free to ask me anything else!';
 
         conversation.customerWs.send(JSON.stringify({
@@ -806,9 +817,19 @@ function handleEndChat(sessionId, endReason = 'agent_ended') {
           message: message
         }));
       }
-    }, 5000);
+    }, endReason === 'customer_ended' ? 0 : 5000);
   }
 
+  // Notify agent if session ended by customer
+  if (conversation.agentWs && conversation.agentWs.readyState === WebSocket.OPEN && endReason === 'customer_ended') {
+    conversation.agentWs.send(JSON.stringify({
+      type: 'session_ended_by_customer',
+      sessionId,
+      message: 'Customer has ended the session.'
+    }));
+  }
+
+  // Clean up conversation state
   conversation.hasHuman = false;
   conversation.agentWs = null;
   conversation.assignedAgent = null;
@@ -828,12 +849,13 @@ function handleEndChat(sessionId, endReason = 'agent_ended') {
     }
   }
 
+  // Notify other agents
   humanAgents.forEach((otherAgentData, otherId) => {
     if (otherId !== agentId && otherAgentData.ws && otherAgentData.ws.readyState === WebSocket.OPEN) {
       otherAgentData.ws.send(JSON.stringify({
         type: 'chat_ended',
         sessionId,
-        endedBy: agentData ? agentData.user.name : 'Unknown',
+        endedBy: endReason === 'customer_ended' ? 'Customer' : (agentData ? agentData.user.name : 'Unknown'),
         endReason,
         totalQueue: waitingQueue.length
       }));
@@ -896,7 +918,21 @@ async function handleWebSocketMessage(ws, data) {
         handleAgentJoin(ws, data);
         break;
       case 'agent_message':
-        handleAgentMessage(data.sessionId, data.message);
+        // Validate that the agent is still assigned to this session
+        const agentConversation = conversations.get(data.sessionId);
+        if (agentConversation && agentConversation.hasHuman && agentConversation.assignedAgent) {
+          handleAgentMessage(data.sessionId, data.message);
+        } else {
+          console.log(`Agent attempted to send message to ended session: ${data.sessionId}`);
+          // Notify agent that session has ended
+          if (ws && ws.readyState === WebSocket.OPEN) {
+            ws.send(JSON.stringify({
+              type: 'session_no_longer_active',
+              sessionId: data.sessionId,
+              message: 'This session is no longer active. The customer may have ended the conversation.'
+            }));
+          }
+        }
         break;
       case 'request_human':
         await handleHumanRequest(data.sessionId);
@@ -931,6 +967,7 @@ async function handleWebSocketMessage(ws, data) {
         const conversation = conversations.get(data.sessionId);
         if (conversation) {
           if (conversation.hasHuman) {
+            // End chat with human agent
             handleEndChat(data.sessionId, 'customer_ended');
           } else {
             // Clear the session for AI-only conversations
@@ -941,6 +978,17 @@ async function handleWebSocketMessage(ws, data) {
             const queueIndex = waitingQueue.indexOf(data.sessionId);
             if (queueIndex > -1) {
               waitingQueue.splice(queueIndex, 1);
+              
+              // Notify agents about queue update
+              humanAgents.forEach((agentData, agentId) => {
+                if (agentData.ws && agentData.ws.readyState === WebSocket.OPEN) {
+                  agentData.ws.send(JSON.stringify({
+                    type: 'customer_left_queue',
+                    sessionId: data.sessionId,
+                    remainingQueue: waitingQueue.length
+                  }));
+                }
+              });
             }
 
             if (conversation.customerWs && conversation.customerWs.readyState === WebSocket.OPEN) {
