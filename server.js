@@ -228,7 +228,6 @@ async function generateAIResponse(userMessage, conversationHistory = []) {
     const knowledgeResults = await searchKnowledgeBase(userMessage);
 
     // Only analyze handoff intent if not a greeting
-    // (already handled above)
     const handoffAnalysis = await analyzeHandoffIntent(userMessage, conversationHistory);
 
     // If high confidence handoff intent, return handoff suggestion
@@ -240,34 +239,23 @@ async function generateAIResponse(userMessage, conversationHistory = []) {
       };
     }
 
-    // If no relevant knowledge found, suggest human help
-    if (knowledgeResults.length === 0) {
-      return {
-        type: 'no_knowledge',
-        message: "I don't have specific information about that. I can connect you with a human agent if you'd like more detailed assistance.",
-        reason: "No relevant knowledge found",
-        intent: 'unknown',
-        category: 'general'
-      };
-    }
-
-    // Generate response using knowledge base context with sales-focused personality
+    // System message for Gemini AI enforcing knowledge base only answers
     const context = `
-    You are a helpful customer service assistant. Answer ONLY based on the provided knowledge base information.
-
-    STRICT RULES:
-    - Use ONLY the information provided below
-    - Do NOT add information not in the knowledge base
-    - If the knowledge base doesn't contain the answer, say "I don't have that specific information"
-    - Be direct and precise
-    - Keep responses concise
+    You are a helpful customer support assistant. Answer the customer questions based on the information provided in the documents table in Supabase datastore.
+    If the customer's question is not covered by this knowledgebase, ask the customer whether he or she wants to connect with human support.
+    Don't answer questions that are not covered by Supabase documents table knowledgebase.
 
     Knowledge base information:
     ${knowledgeResults.map(item => `- ${item.content}`).join('\n')}
 
     Customer question: "${userMessage}"
 
-    Answer based ONLY on the knowledge base information above.
+    STRICT RULES:
+    - Use ONLY the information provided above
+    - Do NOT add information not in the knowledge base
+    - If the knowledge base doesn't contain the answer, say "I don't have that specific information. Would you like to connect with human support?"
+    - Be direct and precise
+    - Keep responses concise
     `;
 
     const result = await model.generateContent(context);
@@ -295,7 +283,7 @@ async function generateAIResponse(userMessage, conversationHistory = []) {
     console.error('AI generation error:', error);
     return {
       type: 'error',
-      message: "Oops! I'm having a bit of trouble right now. Let me connect you with one of our team members who can help you better!"
+      message: "Oops! I'm having a bit of trouble right now. Would you like to connect with human support?"
     };
   }
 }
