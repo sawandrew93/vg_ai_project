@@ -474,12 +474,15 @@ function setupAgentReconnectTimeout(agentId, sessionId) {
   agentReconnectTimeouts.set(agentId, timeoutId);
 }
 
-function sendSatisfactionSurvey(customerWs, sessionId) {
+function sendSatisfactionSurvey(customerWs, sessionId, interactionType = 'human_agent') {
   if (customerWs && customerWs.readyState === WebSocket.OPEN) {
     customerWs.send(JSON.stringify({
       type: 'satisfaction_survey',
       sessionId,
-      message: 'How was your experience with our support?',
+      interactionType,
+      message: interactionType === 'ai_only' 
+        ? 'How was your experience with our AI assistant?' 
+        : 'How was your experience with our support?',
       options: [
         { value: 5, label: '😊 Excellent' },
         { value: 4, label: '🙂 Good' },
@@ -801,7 +804,7 @@ function handleEndChat(sessionId, endReason = 'agent_ended') {
   // Notify customer and show survey if session had human agent
   if (conversation.customerWs && conversation.customerWs.readyState === WebSocket.OPEN && endReason !== 'agent_timeout') {
     if (endReason === 'agent_ended' || endReason === 'customer_ended') {
-      sendSatisfactionSurvey(conversation.customerWs, sessionId);
+      sendSatisfactionSurvey(conversation.customerWs, sessionId, 'human_agent');
     }
 
     setTimeout(() => {
@@ -970,25 +973,36 @@ async function handleWebSocketMessage(ws, data) {
             // End chat with human agent
             handleEndChat(data.sessionId, 'customer_ended');
           } else {
-            // Clear the session for AI-only conversations
-            conversations.delete(data.sessionId);
-            clearCustomerTimeout(data.sessionId);
-            
-            // Remove from waiting queue if present
-            const queueIndex = waitingQueue.indexOf(data.sessionId);
-            if (queueIndex > -1) {
-              waitingQueue.splice(queueIndex, 1);
+            // Show survey for AI-only conversations if they had meaningful interaction
+            if (conversation.messages && conversation.messages.length > 2) {
+              sendSatisfactionSurvey(conversation.customerWs, data.sessionId, 'ai_only');
               
-              // Notify agents about queue update
-              humanAgents.forEach((agentData, agentId) => {
-                if (agentData.ws && agentData.ws.readyState === WebSocket.OPEN) {
-                  agentData.ws.send(JSON.stringify({
-                    type: 'customer_left_queue',
-                    sessionId: data.sessionId,
-                    remainingQueue: waitingQueue.length
-                  }));
+              setTimeout(() => {
+                // Clear the session for AI-only conversations after survey
+                conversations.delete(data.sessionId);
+                clearCustomerTimeout(data.sessionId);
+                
+                // Remove from waiting queue if present
+                const queueIndex = waitingQueue.indexOf(data.sessionId);
+                if (queueIndex > -1) {
+                  waitingQueue.splice(queueIndex, 1);
+                  
+                  // Notify agents about queue update
+                  humanAgents.forEach((agentData, agentId) => {
+                    if (agentData.ws && agentData.ws.readyState === WebSocket.OPEN) {
+                      agentData.ws.send(JSON.stringify({
+                        type: 'customer_left_queue',
+                        sessionId: data.sessionId,
+                        remainingQueue: waitingQueue.length
+                      }));
+                    }
+                  });
                 }
-              });
+              }, 10000); // Give time for survey completion
+            } else {
+              // No meaningful interaction, just end session
+              conversations.delete(data.sessionId);
+              clearCustomerTimeout(data.sessionId);
             }
 
             if (conversation.customerWs && conversation.customerWs.readyState === WebSocket.OPEN) {
@@ -1002,11 +1016,14 @@ async function handleWebSocketMessage(ws, data) {
         break;
       case 'satisfaction_response':
         // Handle satisfaction survey response
+        await saveFeedbackToDatabase(data);
         const historyIndex = chatHistory.findIndex(h => h.sessionId === data.sessionId);
         if (historyIndex !== -1) {
           chatHistory[historyIndex].customerSatisfaction = {
             rating: data.rating,
             feedback: data.feedback,
+            customerName: data.customerName,
+            customerEmail: data.customerEmail,
             timestamp: new Date()
           };
           console.log(`Satisfaction response saved for session ${data.sessionId}: ${data.rating}/5`);
@@ -1309,6 +1326,33 @@ app.get('/api/knowledge-base/stats', verifyToken, async (req, res) => {
   }
 });
 
+// ========== FEEDBACK STORAGE ========== //
+async function saveFeedbackToDatabase(data) {
+  try {
+    const conversation = conversations.get(data.sessionId);
+    const { error } = await supabase
+      .from('customer_feedback')
+      .insert({
+        session_id: data.sessionId,
+        customer_name: data.customerName || null,
+        customer_email: data.customerEmail || null,
+        rating: data.rating,
+        feedback_text: data.feedback || null,
+        interaction_type: data.interactionType || 'human_agent',
+        agent_id: conversation?.assignedAgent || null,
+        agent_name: conversation?.agentName || null
+      });
+
+    if (error) {
+      console.error('Error saving feedback to database:', error);
+    } else {
+      console.log(`Feedback saved to database for session ${data.sessionId}`);
+    }
+  } catch (error) {
+    console.error('Database error saving feedback:', error);
+  }
+}
+
 // ========== ROUTES ========== //
 app.get('/agent', (req, res) => {
   res.sendFile(path.join(__dirname, 'public/agent-dashboard.html'));
@@ -1438,9 +1482,53 @@ app.get('/chat-history', verifyToken, (req, res) => {
   res.json(recentChats);
 });
 
+// Get customer feedback
+app.get('/api/feedback', verifyToken, async (req, res) => {
+  try {
+    const limit = parseInt(req.query.limit) || 50;
+    const { data, error } = await supabase
+      .from('customer_feedback')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(limit);
+
+    if (error) {
+      return res.status(500).json({ error: error.message });
+    }
+
+    res.json(data);
+  } catch (error) {
+    console.error('Error fetching feedback:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // Initialize and start server
 async function startServer() {
   await initializeAgentUsers();
+  
+  // Create feedback table if it doesn't exist
+  try {
+    const { error } = await supabase.rpc('exec_sql', {
+      sql: `
+        CREATE TABLE IF NOT EXISTS customer_feedback (
+          id SERIAL PRIMARY KEY,
+          session_id VARCHAR(255) NOT NULL,
+          customer_name VARCHAR(255),
+          customer_email VARCHAR(255),
+          rating INTEGER NOT NULL CHECK (rating >= 1 AND rating <= 5),
+          feedback_text TEXT,
+          interaction_type VARCHAR(50) NOT NULL,
+          agent_id VARCHAR(255),
+          agent_name VARCHAR(255),
+          created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+        );
+      `
+    });
+    if (error) console.log('Note: Could not create feedback table automatically:', error.message);
+  } catch (e) {
+    console.log('Note: Run setup-feedback-table.sql manually in Supabase');
+  }
 
   server.listen(process.env.PORT || 3000, () => {
     console.log(`Server running on port ${process.env.PORT || 3000}`);
