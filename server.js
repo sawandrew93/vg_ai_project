@@ -1025,6 +1025,17 @@ async function handleWebSocketMessage(ws, data) {
           }
         }
         break;
+      case 'file_uploaded':
+        // Handle file upload notification
+        const conversation = conversations.get(data.sessionId);
+        if (conversation && conversation.agentWs && conversation.agentWs.readyState === WebSocket.OPEN) {
+          conversation.agentWs.send(JSON.stringify({
+            type: 'customer_file_uploaded',
+            sessionId: data.sessionId,
+            fileInfo: data.fileInfo
+          }));
+        }
+        break;
       case 'satisfaction_response':
         // Handle satisfaction survey response
         await saveFeedbackToDatabase(data);
@@ -1220,8 +1231,8 @@ function verifyToken(req, res, next) {
 const multer = require('multer');
 const PDFIngestionService = require('./knowledge-base/ingest-pdf');
 
-// Configure multer for file uploads
-const upload = multer({ 
+// Configure multer for knowledge base uploads
+const kbUpload = multer({ 
   dest: './temp/',
   limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
   fileFilter: (req, file, cb) => {
@@ -1241,10 +1252,31 @@ const upload = multer({
   }
 });
 
+// Configure multer for customer attachments
+const upload = multer({
+  dest: './uploads/',
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = [
+      'image/jpeg', 'image/png', 'image/gif',
+      'application/pdf',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'application/msword',
+      'text/plain'
+    ];
+    
+    if (allowedTypes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error('File type not allowed'));
+    }
+  }
+});
+
 const pdfIngestionService = new PDFIngestionService();
 
 // Upload documents endpoint
-app.post('/api/knowledge-base/upload', verifyToken, upload.array('documents', 10), async (req, res) => {
+app.post('/api/knowledge-base/upload', verifyToken, kbUpload.array('documents', 10), async (req, res) => {
   try {
     if (!req.files || req.files.length === 0) {
       return res.status(400).json({ error: 'No files uploaded' });
@@ -1538,6 +1570,72 @@ app.get('/api/feedback', verifyToken, async (req, res) => {
     res.status(500).json({ error: 'Internal server error' });
   }
 });
+
+// File upload endpoint
+app.post('/api/upload-attachment', upload.single('file'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ success: false, error: 'No file uploaded' });
+    }
+
+    const { sessionId } = req.body;
+    if (!sessionId) {
+      return res.status(400).json({ success: false, error: 'Session ID required' });
+    }
+
+    // Store file info in database
+    const { error } = await supabase
+      .from('customer_attachments')
+      .insert({
+        session_id: sessionId,
+        filename: req.file.filename,
+        original_filename: req.file.originalname,
+        file_size: req.file.size,
+        file_type: req.file.mimetype,
+        file_url: `/uploads/${req.file.filename}`
+      });
+
+    if (error) {
+      console.error('Error saving attachment:', error);
+      return res.status(500).json({ success: false, error: 'Database error' });
+    }
+
+    res.json({
+      success: true,
+      fileInfo: {
+        filename: req.file.originalname,
+        size: req.file.size,
+        url: `/uploads/${req.file.filename}`
+      }
+    });
+  } catch (error) {
+    console.error('Upload error:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Get attachments for session
+app.get('/api/attachments/:sessionId', verifyToken, async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from('customer_attachments')
+      .select('*')
+      .eq('session_id', req.params.sessionId)
+      .order('uploaded_at', { ascending: true });
+
+    if (error) {
+      return res.status(500).json({ error: error.message });
+    }
+
+    res.json(data || []);
+  } catch (error) {
+    console.error('Error fetching attachments:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Serve uploaded files
+app.use('/uploads', express.static('uploads'));
 
 // Get customer intents with filters
 app.get('/api/intents', verifyToken, async (req, res) => {

@@ -300,6 +300,11 @@
                         this.addMessage(`Customer: ${data.message}`, 'customer-msg');
                         break;
 
+                    case 'customer_file_uploaded':
+                        this.addMessage(`📎 Customer uploaded: ${data.fileInfo.filename}`, 'system-msg');
+                        this.showFileAttachment(data.fileInfo);
+                        break;
+
                     case 'request_taken':
                         this.handleRequestTaken(data);
                         break;
@@ -562,6 +567,21 @@
                     // Force end the session on agent side
                     this.endChat();
                 }
+            }
+
+            showFileAttachment(fileInfo) {
+                const messagesDiv = document.getElementById('agent-messages');
+                const fileDiv = document.createElement('div');
+                fileDiv.className = 'file-attachment';
+                fileDiv.innerHTML = `
+                    <div style="background: #f0f0f0; padding: 10px; margin: 5px 0; border-radius: 5px;">
+                        <strong>📎 ${fileInfo.filename}</strong><br>
+                        <small>Size: ${(fileInfo.size / 1024).toFixed(1)} KB</small><br>
+                        <a href="${fileInfo.url}" target="_blank" style="color: #007bff;">Download</a>
+                    </div>
+                `;
+                messagesDiv.appendChild(fileDiv);
+                messagesDiv.scrollTop = messagesDiv.scrollHeight;
             }
 
             updateStats(stats) {

@@ -166,8 +166,17 @@
               <input type="text" id="chat-input" placeholder="Type your message..." />
               <input type="file" id="file-input" style="display: none;" accept="image/*,.pdf,.doc,.docx,.txt">
               <button id="chat-send">Send</button>
-              <button id="file-upload" title="Upload file">📎</button>
+              <button id="file-upload" title="Attach file">📎</button>
               <button id="request-human" title="Request human support">👤</button>
+            </div>
+            
+            <div id="file-preview" class="file-preview" style="display: none;">
+              <div class="file-preview-content">
+                <span id="file-name"></span>
+                <span id="file-size"></span>
+                <button id="upload-file-btn" class="upload-btn">Upload</button>
+                <button id="cancel-file-btn" class="cancel-btn">Cancel</button>
+              </div>
             </div>
 
             <!-- Handoff Confirmation Dialog -->
@@ -441,6 +450,55 @@
           font-size: 14px;
         }
 
+        .file-preview {
+          padding: 1rem;
+          border-top: 1px solid #eee;
+          background: #f8f9fa;
+        }
+
+        .file-preview-content {
+          display: flex;
+          align-items: center;
+          gap: 1rem;
+          font-size: 14px;
+        }
+
+        .upload-btn {
+          background: #28a745;
+          color: white;
+          border: none;
+          padding: 0.5rem 1rem;
+          border-radius: 4px;
+          cursor: pointer;
+        }
+
+        .cancel-btn {
+          background: #dc3545;
+          color: white;
+          border: none;
+          padding: 0.5rem 1rem;
+          border-radius: 4px;
+          cursor: pointer;
+        }
+
+        .file-message {
+          background: #e3f2fd;
+          border-left: 4px solid #2196f3;
+          padding: 0.75rem;
+          margin: 0.5rem 0;
+          border-radius: 4px;
+        }
+
+        .file-link {
+          color: #2196f3;
+          text-decoration: none;
+          font-weight: 500;
+        }
+
+        .file-link:hover {
+          text-decoration: underline;
+        }
+
         #request-human:hover, #file-upload:hover {
           transform: scale(1.05);
         }
@@ -677,8 +735,16 @@
       fileInput.addEventListener('change', (e) => {
         const file = e.target.files[0];
         if (file) {
-          this.uploadFile(file);
+          this.showFilePreview(file);
         }
+      });
+
+      document.getElementById('upload-file-btn').addEventListener('click', () => {
+        this.uploadSelectedFile();
+      });
+
+      document.getElementById('cancel-file-btn').addEventListener('click', () => {
+        this.cancelFileUpload();
       });
 
       // Handoff dialog event listeners
@@ -1038,25 +1104,57 @@
       document.getElementById('file-input').click();
     }
 
-    uploadFile(file) {
-      const fileName = file.name;
+    showFilePreview(file) {
+      this.selectedFile = file;
       const fileSize = (file.size / 1024).toFixed(1) + ' KB';
+      
+      document.getElementById('file-name').textContent = file.name;
+      document.getElementById('file-size').textContent = `(${fileSize})`;
+      document.getElementById('file-preview').style.display = 'block';
+    }
 
-      this.addMessage(`📎 Uploading ${fileName} (${fileSize})...`, 'user');
+    cancelFileUpload() {
+      this.selectedFile = null;
+      document.getElementById('file-input').value = '';
+      document.getElementById('file-preview').style.display = 'none';
+    }
 
-      setTimeout(() => {
-        this.addMessage(`✅ File uploaded: ${fileName}`, 'system');
+    async uploadSelectedFile() {
+      if (!this.selectedFile) return;
 
-        if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-          this.ws.send(JSON.stringify({
-            type: 'file_upload',
-            sessionId: this.sessionId,
-            fileName: fileName,
-            fileType: file.type,
-            fileData: 'base64_data_here'
-          }));
+      const formData = new FormData();
+      formData.append('file', this.selectedFile);
+      formData.append('sessionId', this.sessionId);
+
+      try {
+        this.addMessage(`📎 Uploading ${this.selectedFile.name}...`, 'user');
+        
+        const response = await fetch('/api/upload-attachment', {
+          method: 'POST',
+          body: formData
+        });
+
+        const result = await response.json();
+        
+        if (result.success) {
+          this.addMessage(`✅ File uploaded: ${this.selectedFile.name}`, 'system');
+          
+          // Notify via WebSocket
+          if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+            this.ws.send(JSON.stringify({
+              type: 'file_uploaded',
+              sessionId: this.sessionId,
+              fileInfo: result.fileInfo
+            }));
+          }
+        } else {
+          this.addMessage(`❌ Upload failed: ${result.error}`, 'system');
         }
-      }, 1500);
+      } catch (error) {
+        this.addMessage(`❌ Upload error: ${error.message}`, 'system');
+      }
+
+      this.cancelFileUpload();
     }
 
     showSatisfactionSurvey(data) {
