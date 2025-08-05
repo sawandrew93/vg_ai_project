@@ -1027,9 +1027,9 @@ async function handleWebSocketMessage(ws, data) {
         break;
       case 'file_uploaded':
         // Handle file upload notification
-        const conversation = conversations.get(data.sessionId);
-        if (conversation && conversation.agentWs && conversation.agentWs.readyState === WebSocket.OPEN) {
-          conversation.agentWs.send(JSON.stringify({
+        const fileConversation = conversations.get(data.sessionId);
+        if (fileConversation && fileConversation.agentWs && fileConversation.agentWs.readyState === WebSocket.OPEN) {
+          fileConversation.agentWs.send(JSON.stringify({
             type: 'customer_file_uploaded',
             sessionId: data.sessionId,
             fileInfo: data.fileInfo
