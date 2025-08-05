@@ -7,7 +7,7 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 class EmbeddingService {
   constructor() {
-    // Use the latest text embedding model
+    // Use Gemini Embeddings 001 model
     this.embeddingModel = genAI.getGenerativeModel({ 
       model: "text-embedding-004" 
     });
