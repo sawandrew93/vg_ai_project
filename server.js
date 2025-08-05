@@ -239,17 +239,43 @@ async function generateAIResponse(userMessage, conversationHistory = []) {
       };
     }
 
-    // Responsible AI-compliant system message for Gemini AI (read from .env)
-    let systemMessage = process.env.GEMINI_SYSTEM_MESSAGE;
-    if (!systemMessage) {
-      // Fallback to default if not set
-      systemMessage = `You are a helpful customer support assistant. Please answer customer questions using only the information provided from the documents table in the Supabase datastore. If you do not find relevant information, politely let the customer know and ask if they would like to connect with human support.\n\nKnowledge base information:\n${knowledgeResults.map(item => `- ${item.content}`).join('\n')}\n\nCustomer question: \"${userMessage}\"\n\nGuidelines:\n- Use only the information provided above\n- If you do not find relevant information, say \"I'm sorry, I couldn't find specific information about that. Would you like to connect with human support?\"\n- Be polite, direct, and concise\n`;
+    // Check if message is a question
+    const isQuestion = userMessage.includes('?') || 
+                      userMessage.toLowerCase().startsWith('what') ||
+                      userMessage.toLowerCase().startsWith('how') ||
+                      userMessage.toLowerCase().startsWith('when') ||
+                      userMessage.toLowerCase().startsWith('where') ||
+                      userMessage.toLowerCase().startsWith('why') ||
+                      userMessage.toLowerCase().startsWith('can') ||
+                      userMessage.toLowerCase().startsWith('do') ||
+                      userMessage.toLowerCase().startsWith('does') ||
+                      userMessage.toLowerCase().startsWith('is') ||
+                      userMessage.toLowerCase().startsWith('are');
+
+    let context;
+    if (isQuestion && knowledgeResults.length === 0) {
+      // No knowledge found for question - suggest human handoff
+      return {
+        type: 'handoff_suggestion',
+        message: "I'm sorry, I couldn't find specific information about that. Would you like to connect with human support?",
+        reason: "No relevant knowledge found for customer question"
+      };
+    } else if (isQuestion) {
+      // Question with knowledge available
+      context = `You are a helpful customer support assistant. Please answer customer questions using only the information provided from the documents table in the Supabase datastore.
+
+Knowledge base information:
+${knowledgeResults.map(item => `- ${item.content}`).join('\n')}
+
+Customer question: "${userMessage}"
+
+Answer based ONLY on the knowledge base information above. Be direct and concise.`;
     } else {
-      // Replace template variables in systemMessage
-      systemMessage = systemMessage.replace(/\$\{knowledgeResults\}/g, knowledgeResults.map(item => `- ${item.content}`).join('\n'));
-      systemMessage = systemMessage.replace(/\$\{userMessage\}/g, userMessage);
+      // Not a question - reply without checking knowledge base
+      context = `You are a helpful customer support assistant. The customer said: "${userMessage}"
+
+This is not a question, so respond appropriately without needing to check any knowledge base. Be friendly and helpful.`;
     }
-    const context = systemMessage;
 
     const result = await model.generateContent(context);
     const responseText = result.response.text();
