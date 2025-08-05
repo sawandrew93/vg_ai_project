@@ -899,6 +899,13 @@ async function handleWebSocketMessage(ws, data) {
         } else {
           const conversation = conversations.get(data.sessionId);
           if (conversation && conversation.customerWs) {
+            // Add AI response to conversation history
+            conversation.messages.push({
+              role: 'assistant',
+              content: "No problem! I'm here to help. What else can I assist you with?",
+              timestamp: new Date()
+            });
+            
             conversation.customerWs.send(JSON.stringify({
               type: 'ai_response',
               message: "No problem! I'm here to help. What else can I assist you with?",
@@ -914,9 +921,15 @@ async function handleWebSocketMessage(ws, data) {
           if (conversation.hasHuman) {
             handleEndChat(data.sessionId, 'customer_ended');
           } else {
-            // Just clear the session for AI-only conversations
+            // Clear the session for AI-only conversations
             conversations.delete(data.sessionId);
             clearCustomerTimeout(data.sessionId);
+            
+            // Remove from waiting queue if present
+            const queueIndex = waitingQueue.indexOf(data.sessionId);
+            if (queueIndex > -1) {
+              waitingQueue.splice(queueIndex, 1);
+            }
 
             if (conversation.customerWs && conversation.customerWs.readyState === WebSocket.OPEN) {
               conversation.customerWs.send(JSON.stringify({

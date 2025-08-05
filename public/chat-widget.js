@@ -701,22 +701,17 @@
         }
 
         this.clearSession();
+        this.sessionId = this.getOrCreateSessionId();
 
         const messagesContainer = document.getElementById('chat-messages');
         messagesContainer.innerHTML = '';
 
         this.addMessage('Session ended. Thank you for chatting with us!', 'system', false);
+        this.addMessage("Hi there! 👋 I'm here to help you learn about our products and services. What can I assist you with today?", 'bot', false);
 
         this.isConnectedToHuman = false;
-        this.updateConnectionStatus('Session Ended', 'Start a new conversation');
-
-        // Create new session for next conversation
-        setTimeout(() => {
-          this.sessionId = this.getOrCreateSessionId();
-          this.addMessage("Hi there! 👋 I'm here to help you learn about our products and services. What can I assist you with today?", 'bot', false);
-          this.updateConnectionStatus('AI Assistant', 'Ready to help');
-          document.getElementById('request-human').disabled = false;
-        }, 2000);
+        this.updateConnectionStatus('AI Assistant', 'Ready to help');
+        document.getElementById('request-human').disabled = false;
       }
     }
 
@@ -899,8 +894,6 @@
 
       if (accepted) {
         this.addMessage('Connecting you to a sales representative...', 'system');
-      } else {
-        this.addMessage('Continuing with AI assistant...', 'system');
       }
     }
 
