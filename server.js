@@ -139,6 +139,8 @@ async function analyzeHandoffIntent(message, conversationHistory = []) {
     const context = `
     Analyze if this customer message indicates they want to speak with a human sales representative.
 
+    If the message is a greeting or pleasantry (e.g., 'hi', 'hello', 'how are you', 'good morning', 'hey', 'greetings', 'how's it going', 'good day', etc.), set needsHuman to false and reason to 'Greeting message'.
+
     Consider these scenarios as requiring human handoff:
     - Explicit requests for human help, agent, representative, sales person, "talk to someone"
     - Ready to purchase or buy something ("I want to buy", "how much does it cost", "pricing")
