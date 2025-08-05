@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chatbot Test Page</title>
+    <link rel="stylesheet" href="chatbot.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Welcome to Our Website</h1>
+        <p>This is a test page to demonstrate the AI chatbot integration. The chat widget should appear in the bottom-right corner.</p>
+        <p>Try asking questions about our products, pricing, or support. You can also request to speak with a human agent.</p>
+    </div>
+
+    <!-- Chat Widget Configuration -->
+    <!-- Chat Widget Configuration -->
+
+    <script>
+
+    const getWebSocketUrl = () => {
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const hostname = window.location.hostname;
+        const port = window.location.port || (window.location.protocol === 'https:' ? '443' : '80');
+
+        // If you're running on a specific port (like 3000), specify it:
+        const wsPort = port === '80' || port === '443' ? '3000' : port;
+
+        return `${protocol}//${hostname}:${wsPort}`;
+    };
+
+    window.chatWidgetConfig = {
+        serverUrl: getWebSocketUrl(),
+        position: 'bottom-right',
+        primaryColor: '#007bff',
+        title: 'Support Chat'
+    };
+
+    console.log('Dynamic WebSocket URL:', window.chatWidgetConfig.serverUrl);
+    </script>
+
+    <!-- Load Chat Widget -->
+    <script src="chat-widget.js"></script>
+</body>
+</html>
