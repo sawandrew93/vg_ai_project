@@ -1172,6 +1172,8 @@
     }
 
     requestHuman() {
+      console.log('Human support button clicked');
+      this.resetIdleTimer();
       this.showCustomerInfoDialog();
     }
 
@@ -1192,6 +1194,7 @@
     }
 
     submitCustomerInfo() {
+      console.log('Submitting customer info for human support');
       const firstname = document.getElementById('customer-firstname').value.trim();
       const lastname = document.getElementById('customer-lastname').value.trim();
       const email = document.getElementById('customer-email').value.trim();
@@ -1210,7 +1213,11 @@
       this.customerInfo = { firstname, lastname, email, country };
       this.hideCustomerInfoDialog();
 
+      console.log('WebSocket state:', this.ws ? this.ws.readyState : 'null');
+      console.log('Session ID:', this.sessionId);
+      
       if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+        console.log('Sending human request to server');
         this.ws.send(JSON.stringify({
           type: 'request_human',
           sessionId: this.sessionId,
@@ -1219,6 +1226,7 @@
 
         this.addMessage('Requesting human agent...', 'system');
       } else {
+        console.log('WebSocket not available');
         this.addMessage('Unable to connect to server. Please try again.', 'system');
       }
     }
