@@ -465,6 +465,12 @@
           justify-content: center;
         }
 
+        #request-human:disabled {
+          background: #6c757d;
+          cursor: not-allowed;
+          opacity: 0.5;
+        }
+
         .file-preview {
           padding: 1rem;
           border-top: 1px solid #eee;
@@ -893,6 +899,7 @@
             document.getElementById('request-human').disabled = true;
             document.getElementById('file-upload').style.display = 'inline-block';
           } else {
+            document.getElementById('request-human').disabled = false;
             document.getElementById('file-upload').style.display = 'none';
           }
           break;
@@ -918,6 +925,7 @@
           this.updateConnectionStatus('Human Agent', 'Connected to agent');
           this.addMessage(message, 'system');
           document.getElementById('file-upload').style.display = 'inline-block';
+          document.getElementById('request-human').disabled = true;
           this.saveConnectionState();
           break;
 
@@ -931,6 +939,7 @@
           this.updateConnectionStatus('AI Assistant', 'Back to AI');
           this.addMessage(message, 'system');
           document.getElementById('file-upload').style.display = 'none';
+          document.getElementById('request-human').disabled = false;
           this.saveConnectionState();
           break;
 
@@ -1015,7 +1024,7 @@
 
       if (isWaiting) {
         indicatorClass = 'waiting';
-      } else if (this.isConnectedToHuman) {
+      } else if (this.isConnectedToHuman && statusText === 'Human Agent') {
         indicatorClass = 'human';
       } else if (statusText.includes('Disconnected') || statusText.includes('Error')) {
         indicatorClass = 'disconnected';
