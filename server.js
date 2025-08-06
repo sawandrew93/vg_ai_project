@@ -833,18 +833,29 @@ function handleAcceptRequest(sessionId, agentId, acceptingWs = null) {
 }
 
 function handleAgentMessage(sessionId, message, messageType = 'text') {
+  console.log(`\n=== AGENT MESSAGE DEBUG ===`);
+  console.log(`Session ID: ${sessionId}`);
+  console.log(`Message: ${message}`);
+  
   const conversation = conversations.get(sessionId);
   if (!conversation) {
-    console.log('Cannot send agent message - conversation not found');
+    console.log('❌ Cannot send agent message - conversation not found');
+    console.log(`Available conversations: ${Array.from(conversations.keys()).join(', ')}`);
     return;
   }
+  
+  console.log(`✅ Conversation found`);
+  console.log(`Has human: ${conversation.hasHuman}`);
+  console.log(`Assigned agent: ${conversation.assignedAgent}`);
+  console.log(`Agent name: ${conversation.agentName}`);
 
   if (!conversation.customerWs) {
-    console.log('Cannot send agent message - customer not connected');
+    console.log('❌ Cannot send agent message - customer not connected');
     return;
   }
-
-  console.log(`Sending agent message for session ${sessionId}: ${message}`);
+  
+  console.log(`✅ Customer WebSocket exists`);
+  console.log(`Customer WebSocket state: ${conversation.customerWs.readyState}`);
 
   conversation.messages.push({
     role: 'agent',
@@ -860,10 +871,11 @@ function handleAgentMessage(sessionId, message, messageType = 'text') {
       messageType,
       timestamp: new Date()
     }));
-    console.log(`Agent message sent successfully to customer`);
+    console.log(`✅ Agent message sent successfully to customer`);
   } else {
-    console.log('Customer WebSocket not open');
+    console.log(`❌ Customer WebSocket not open (state: ${conversation.customerWs.readyState})`);
   }
+  console.log(`=== END DEBUG ===\n`);
 }
 
 function handleEndChat(sessionId, endReason = 'agent_ended') {
@@ -995,12 +1007,14 @@ async function handleWebSocketMessage(ws, data) {
         handleAgentJoin(ws, data);
         break;
       case 'agent_message':
+        console.log(`Received agent_message for session ${data.sessionId}`);
         handleAgentMessage(data.sessionId, data.message);
         break;
       case 'request_human':
         await handleHumanRequest(data.sessionId);
         break;
       case 'accept_request':
+        console.log(`Agent ${data.agentId} accepting request ${data.sessionId} via WebSocket`);
         handleAcceptRequest(data.sessionId, data.agentId, ws);
         break;
       case 'end_chat':

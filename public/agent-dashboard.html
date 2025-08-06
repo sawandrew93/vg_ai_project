@@ -167,6 +167,11 @@
             }
 
             init() {
+                // Request desktop notification permission
+                if ('Notification' in window && Notification.permission === 'default') {
+                    Notification.requestPermission();
+                }
+
                 // Check if already logged in
                 this.token = localStorage.getItem('agentToken');
                 if (this.token) {
