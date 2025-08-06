@@ -683,21 +683,26 @@
                 try {
                     // Create audio context for notification sound
                     const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                    const oscillator = audioContext.createOscillator();
-                    const gainNode = audioContext.createGain();
-
-                    oscillator.connect(gainNode);
-                    gainNode.connect(audioContext.destination);
-
-                    oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
-                    oscillator.frequency.setValueAtTime(600, audioContext.currentTime + 0.1);
-                    oscillator.frequency.setValueAtTime(800, audioContext.currentTime + 0.2);
-
-                    gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-                    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
-
-                    oscillator.start(audioContext.currentTime);
-                    oscillator.stop(audioContext.currentTime + 0.3);
+                    
+                    // Play multiple beeps for attention
+                    for (let i = 0; i < 3; i++) {
+                        const oscillator = audioContext.createOscillator();
+                        const gainNode = audioContext.createGain();
+                        
+                        oscillator.connect(gainNode);
+                        gainNode.connect(audioContext.destination);
+                        
+                        const startTime = audioContext.currentTime + (i * 0.4);
+                        
+                        oscillator.frequency.setValueAtTime(1000, startTime);
+                        oscillator.frequency.setValueAtTime(800, startTime + 0.1);
+                        
+                        gainNode.gain.setValueAtTime(0.6, startTime);
+                        gainNode.gain.exponentialRampToValueAtTime(0.01, startTime + 0.2);
+                        
+                        oscillator.start(startTime);
+                        oscillator.stop(startTime + 0.2);
+                    }
                 } catch (error) {
                     console.log('Could not play notification sound:', error);
                 }

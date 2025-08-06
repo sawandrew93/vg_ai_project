@@ -834,16 +834,17 @@ function handleAcceptRequest(sessionId, agentId, acceptingWs = null) {
 
 function handleAgentMessage(sessionId, message, messageType = 'text') {
   const conversation = conversations.get(sessionId);
-  if (!conversation || !conversation.customerWs) {
-    console.log('Cannot send agent message - conversation or customer not found');
+  if (!conversation) {
+    console.log('Cannot send agent message - conversation not found');
     return;
   }
 
-  // Check if session still has human agent assigned
-  if (!conversation.hasHuman || !conversation.assignedAgent) {
-    console.log('Cannot send agent message - session no longer has human agent');
+  if (!conversation.customerWs) {
+    console.log('Cannot send agent message - customer not connected');
     return;
   }
+
+  console.log(`Sending agent message for session ${sessionId}: ${message}`);
 
   conversation.messages.push({
     role: 'agent',
@@ -859,6 +860,9 @@ function handleAgentMessage(sessionId, message, messageType = 'text') {
       messageType,
       timestamp: new Date()
     }));
+    console.log(`Agent message sent successfully to customer`);
+  } else {
+    console.log('Customer WebSocket not open');
   }
 }
 
