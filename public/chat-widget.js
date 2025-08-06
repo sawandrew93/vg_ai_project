@@ -325,7 +325,7 @@
         }
 
         .status-indicator.human {
-          background: #FF5722;
+          background: #4CAF50;
         }
 
         .status-indicator.disconnected {
