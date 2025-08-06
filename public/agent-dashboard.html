@@ -85,73 +85,7 @@
     </div>
 
     <style>
-        .agent-notification {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background: white;
-            border: 2px solid #007bff;
-            border-radius: 8px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-            padding: 1rem;
-            z-index: 99999;
-            max-width: 300px;
-            animation: slideIn 0.3s ease;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-        }
 
-        @keyframes slideIn {
-            from { transform: translateX(100%); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
-        }
-
-        .agent-notification .notification-content h4 {
-            margin: 0 0 0.5rem 0;
-            color: #007bff;
-            font-size: 1rem;
-        }
-
-        .agent-notification .notification-content p {
-            margin: 0.25rem 0;
-            font-size: 0.9rem;
-            color: #666;
-        }
-
-        .agent-notification .notification-actions {
-            display: flex;
-            gap: 0.5rem;
-            margin-top: 1rem;
-        }
-
-        .agent-notification .accept-btn {
-            background: #28a745;
-            color: white;
-            border: none;
-            padding: 0.5rem 1rem;
-            border-radius: 4px;
-            cursor: pointer;
-            flex: 1;
-            font-size: 0.9rem;
-        }
-
-        .agent-notification .dismiss-btn {
-            background: #6c757d;
-            color: white;
-            border: none;
-            padding: 0.5rem 1rem;
-            border-radius: 4px;
-            cursor: pointer;
-            flex: 1;
-            font-size: 0.9rem;
-        }
-
-        .agent-notification .accept-btn:hover {
-            background: #218838;
-        }
-
-        .agent-notification .dismiss-btn:hover {
-            background: #5a6268;
-        }
     </style>
     <script>
         class AgentDashboard {
@@ -425,33 +359,21 @@
             }
 
             showNotification(data) {
-                // Create notification popup similar to other pages
-                const notification = document.createElement('div');
-                notification.className = 'agent-notification';
-                notification.innerHTML = `
-                    <div class="notification-content">
-                        <h4>📞 New Customer Request</h4>
-                        <p>Position ${data.position} of ${data.totalInQueue}</p>
+                // Use simple notification div instead of popup
+                const notificationDiv = document.getElementById('notification');
+                notificationDiv.innerHTML = `
+                    <div style="background: #007bff; color: white; padding: 15px; border-radius: 5px; margin: 10px 0;">
+                        <h4>📞 New Customer Request (Position ${data.position})</h4>
                         <p>"${data.lastMessage}"</p>
-                        <div class="notification-actions">
-                            <button onclick="agentDashboard.acceptRequest('${data.sessionId}')" class="accept-btn">Accept</button>
-                            <button onclick="agentDashboard.dismissNotification(this)" class="dismiss-btn">Dismiss</button>
-                        </div>
+                        <button onclick="agentDashboard.acceptRequest('${data.sessionId}')" style="background: #28a745; color: white; border: none; padding: 8px 16px; border-radius: 4px; margin-right: 10px; cursor: pointer;">Accept</button>
+                        <button onclick="agentDashboard.dismissNotification()" style="background: #6c757d; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;">Dismiss</button>
                     </div>
                 `;
-
-                document.body.appendChild(notification);
+                notificationDiv.style.display = 'block';
                 this.currentSession = data.sessionId;
 
                 // Show desktop notification and play sound
                 this.showDesktopNotification(data);
-
-                // Auto-dismiss after 30 seconds
-                setTimeout(() => {
-                    if (notification.parentNode) {
-                        notification.remove();
-                    }
-                }, 30000);
             }
 
             acceptRequest(sessionId = null, data = null) {
@@ -491,8 +413,7 @@
                         agentId: this.user.id
                     }));
                     
-                    // Remove all notifications
-                    document.querySelectorAll('.agent-notification').forEach(n => n.remove());
+                    document.getElementById('notification').style.display = 'none';
                 }
             }
 
@@ -563,16 +484,14 @@
 
             handleRequestTaken(data) {
                 if (this.currentSession === data.sessionId) {
-                    // Remove existing notifications for this session
-                    document.querySelectorAll('.agent-notification').forEach(n => n.remove());
+                    document.getElementById('notification').style.display = 'none';
                     this.currentSession = null;
                 }
                 this.updateStats({ queueCount: data.remainingQueue });
             }
 
             handleRequestAlreadyTaken(data) {
-                // Remove existing notifications
-                document.querySelectorAll('.agent-notification').forEach(n => n.remove());
+                document.getElementById('notification').style.display = 'none';
                 this.currentSession = null;
             }
 
@@ -713,11 +632,8 @@
                 }
             }
 
-            dismissNotification(button) {
-                const notification = button.closest('.agent-notification');
-                if (notification) {
-                    notification.remove();
-                }
+            dismissNotification() {
+                document.getElementById('notification').style.display = 'none';
             }
 
             updateStats(stats) {
