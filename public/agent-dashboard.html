@@ -4,6 +4,7 @@
     <title>Support Agent Dashboard</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="agent-dashboard.css">
+    <script src="agent-notifications.js"></script>
 </head>
 <body>
     <!-- Login Form -->
@@ -104,6 +105,11 @@
                 // Request desktop notification permission
                 if ('Notification' in window && Notification.permission === 'default') {
                     Notification.requestPermission();
+                }
+
+                // Initialize global notification system for sound
+                if (typeof AgentNotifications !== 'undefined') {
+                    this.globalNotifications = new AgentNotifications();
                 }
 
                 // Check if already logged in
@@ -349,6 +355,11 @@
 
                 // Show desktop notification and play sound
                 this.showDesktopNotification(data);
+                
+                // Use global notification system for sound
+                if (this.globalNotifications) {
+                    this.globalNotifications.playNotificationSound();
+                }
             }
 
             acceptRequest(sessionId = null, data = null) {
