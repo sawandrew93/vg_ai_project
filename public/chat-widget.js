@@ -211,19 +211,6 @@
               </div>
             </div>
 
-            <!-- Idle Timeout Dialog -->
-            <div id="idle-timeout-dialog" class="handoff-dialog" style="display: none;">
-              <div class="handoff-content">
-                <h4>Session Timeout</h4>
-                <p>You've been idle for a while. What would you like to do?</p>
-                <div class="handoff-buttons" style="flex-direction: column; gap: 8px;">
-                  <button id="idle-feedback-btn" class="handoff-btn handoff-yes">Give Feedback</button>
-                  <button id="idle-continue-btn" class="handoff-btn handoff-no">Continue Session</button>
-                  <button id="idle-end-btn" class="handoff-btn" style="background: #dc3545; color: white;">End Session</button>
-                </div>
-              </div>
-            </div>
-
             <div id="satisfaction-survey" style="display: none;">
               <div class="survey-content">
                 <h4 id="survey-title">How was your experience?</h4>
@@ -829,18 +816,7 @@
         this.hideCustomerInfoDialog();
       });
 
-      // Idle timeout dialog event listeners
-      document.getElementById('idle-feedback-btn').addEventListener('click', () => {
-        this.handleIdleFeedback();
-      });
 
-      document.getElementById('idle-continue-btn').addEventListener('click', () => {
-        this.handleIdleContinue();
-      });
-
-      document.getElementById('idle-end-btn').addEventListener('click', () => {
-        this.handleIdleEndSession();
-      });
     }
 
     clearChatHistory() {
@@ -1129,43 +1105,17 @@
         clearTimeout(this.idleTimer);
       }
       this.idleTimer = setTimeout(() => {
-        this.showIdleTimeoutDialog();
-      }, 15000);
+        this.handleSessionTimeout();
+      }, 60 * 60 * 1000);
     }
 
-    showIdleTimeoutDialog() {
-      document.getElementById('idle-timeout-dialog').style.display = 'block';
-    }
-
-    handleIdleFeedback() {
-      document.getElementById('idle-timeout-dialog').style.display = 'none';
-      this.showSatisfactionSurvey({
-        message: 'How was your experience?',
-        options: [
-          { label: '😊 Excellent', value: 5 },
-          { label: '🙂 Good', value: 4 },
-          { label: '😐 Average', value: 3 },
-          { label: '🙁 Poor', value: 2 },
-          { label: '😞 Very Poor', value: 1 }
-        ],
-        sessionId: this.sessionId,
-        interactionType: 'idle_timeout'
-      });
-    }
-
-    handleIdleContinue() {
-      document.getElementById('idle-timeout-dialog').style.display = 'none';
-      this.resetIdleTimer();
-    }
-
-    handleIdleEndSession() {
-      document.getElementById('idle-timeout-dialog').style.display = 'none';
+    handleSessionTimeout() {
       this.clearSession();
       this.sessionId = this.getOrCreateSessionId();
       
       const messagesContainer = document.getElementById('chat-messages');
       messagesContainer.innerHTML = '';
-      this.addMessage('Session ended. Thank you for using our chat!', 'system', false);
+      this.addMessage('Session ended due to inactivity. Feel free to start a new conversation!', 'system', false);
       
       this.isConnectedToHuman = false;
       this.updateConnectionStatus('AI Assistant', 'Ready to help');
@@ -1393,16 +1343,6 @@
           }
 
           this.addMessage('Thank you for your feedback!', 'system');
-          
-          // Clear chat if this was idle timeout feedback
-          if (data.interactionType === 'idle_timeout') {
-            setTimeout(() => {
-              this.clearSession();
-              this.sessionId = this.getOrCreateSessionId();
-              const messagesContainer = document.getElementById('chat-messages');
-              messagesContainer.innerHTML = '';
-            }, 2000);
-          }
         }
 
         // Clear form
