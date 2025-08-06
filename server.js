@@ -748,7 +748,7 @@ function handleAgentJoin(ws, data) {
   }
 }
 
-function handleAcceptRequest(sessionId, agentId) {
+function handleAcceptRequest(sessionId, agentId, acceptingWs = null) {
   const conversation = conversations.get(sessionId);
   const agentData = humanAgents.get(agentId);
 
@@ -758,16 +758,27 @@ function handleAcceptRequest(sessionId, agentId) {
   }
 
   if (conversation.hasHuman) {
-    agentData.ws.send(JSON.stringify({
-      type: 'request_already_taken',
-      message: 'This customer has already been assigned to another agent',
-      sessionId
-    }));
+    const targetWs = acceptingWs || agentData.ws;
+    if (targetWs && targetWs.readyState === WebSocket.OPEN) {
+      targetWs.send(JSON.stringify({
+        type: 'request_already_taken',
+        message: 'This customer has already been assigned to another agent',
+        sessionId
+      }));
+    }
     return;
   }
 
+  // Use the accepting WebSocket if provided, otherwise use stored one
+  const activeWs = acceptingWs || agentData.ws;
+  
+  // Update agent data with current WebSocket
+  if (acceptingWs) {
+    agentData.ws = acceptingWs;
+  }
+
   conversation.hasHuman = true;
-  conversation.agentWs = agentData.ws;
+  conversation.agentWs = activeWs;
   conversation.assignedAgent = agentId;
   conversation.agentName = agentData.user.name;
 
@@ -800,21 +811,23 @@ function handleAcceptRequest(sessionId, agentId) {
     }));
   }
 
-  agentData.ws.send(JSON.stringify({
-    type: 'customer_assigned',
-    sessionId,
-    history: conversation.messages,
-    queuePosition: 0,
-    cannedResponses: [
-      "Thank you for contacting us! How can I assist you today?",
-      "I understand your concern. Let me look into this for you right away.",
-      "Is there anything else I can help you with?",
-      "Let me transfer you to a specialist who can better assist you.",
-      "Thank you for your patience. I have the information you need.",
-      "I apologize for any inconvenience. Let me resolve this for you.",
-      "Your issue has been resolved. Is there anything else you need help with?"
-    ]
-  }));
+  if (activeWs && activeWs.readyState === WebSocket.OPEN) {
+    activeWs.send(JSON.stringify({
+      type: 'customer_assigned',
+      sessionId,
+      history: conversation.messages,
+      queuePosition: 0,
+      cannedResponses: [
+        "Thank you for contacting us! How can I assist you today?",
+        "I understand your concern. Let me look into this for you right away.",
+        "Is there anything else I can help you with?",
+        "Let me transfer you to a specialist who can better assist you.",
+        "Thank you for your patience. I have the information you need.",
+        "I apologize for any inconvenience. Let me resolve this for you.",
+        "Your issue has been resolved. Is there anything else you need help with?"
+      ]
+    }));
+  }
 
   console.log(`Agent ${agentData.user.name} accepted request for session ${sessionId}. Queue now: ${waitingQueue.length}`);
 }
@@ -984,7 +997,7 @@ async function handleWebSocketMessage(ws, data) {
         await handleHumanRequest(data.sessionId);
         break;
       case 'accept_request':
-        handleAcceptRequest(data.sessionId, data.agentId);
+        handleAcceptRequest(data.sessionId, data.agentId, ws);
         break;
       case 'end_chat':
         handleEndChat(data.sessionId);
