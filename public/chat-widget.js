@@ -169,7 +169,6 @@
               <div class="button-group">
                 <button id="chat-send">Send</button>
                 <button id="file-upload" title="Attach file" style="display: none;">📁 Attach</button>
-                <button id="request-human" title="Connect with Vanguard Sales Representative">Connect with Vanguard Sales Representative</button>
               </div>
             </div>
             
@@ -775,7 +774,6 @@
       const close = document.getElementById('chat-close');
       const input = document.getElementById('chat-input');
       const send = document.getElementById('chat-send');
-      const requestHuman = document.getElementById('request-human');
       const fileUpload = document.getElementById('file-upload');
       const fileInput = document.getElementById('file-input');
       const clearChat = document.getElementById('clear-chat');
@@ -784,7 +782,6 @@
       toggle.addEventListener('click', () => this.toggleChat());
       close.addEventListener('click', () => this.closeChat());
       send.addEventListener('click', () => this.sendMessage());
-      requestHuman.addEventListener('click', () => this.requestHuman());
       fileUpload.addEventListener('click', () => this.handleFileUpload());
       clearChat.addEventListener('click', () => this.clearChatHistory());
       endSession.addEventListener('click', () => this.endSession());
@@ -842,7 +839,6 @@
 
         this.isConnectedToHuman = false;
         this.updateConnectionStatus('AI Assistant', 'Ready to help');
-        document.getElementById('request-human').disabled = false;
 
         console.log('Chat history cleared, new session:', this.sessionId);
       }
@@ -869,7 +865,6 @@
 
         this.isConnectedToHuman = false;
         this.updateConnectionStatus('AI Assistant', 'Ready to help');
-        document.getElementById('request-human').disabled = false;
       }
     }
 
@@ -981,7 +976,6 @@
           this.isConnectedToHuman = true;
           this.updateConnectionStatus('Human Agent', 'Connected to agent');
           this.addMessage(message, 'system');
-          document.getElementById('request-human').disabled = true;
           document.getElementById('file-upload').style.display = 'inline-block';
           this.saveConnectionState();
           break;
@@ -989,14 +983,12 @@
         case 'waiting_for_human':
           this.updateConnectionStatus('In Queue', 'Waiting for agent', true);
           this.addMessage(message, 'system');
-          document.getElementById('request-human').disabled = true;
           break;
 
         case 'agent_left':
           this.isConnectedToHuman = false;
           this.updateConnectionStatus('AI Assistant', 'Back to AI');
           this.addMessage(message, 'system');
-          document.getElementById('request-human').disabled = false;
           document.getElementById('file-upload').style.display = 'none';
           this.saveConnectionState();
           break;
@@ -1021,7 +1013,6 @@
 
         case 'no_agents_available':
           this.addMessage(message, 'system');
-          document.getElementById('request-human').disabled = false;
           break;
 
         case 'session_ended':
@@ -1180,16 +1171,17 @@
       if (this.isConnectedToHuman) return;
       
       const messagesContainer = document.getElementById('chat-messages');
-      const existingButton = messagesContainer.querySelector('.connect-button-message');
-      if (existingButton) return;
       
       const buttonDiv = document.createElement('div');
       buttonDiv.className = 'message bot-message connect-button-message';
       buttonDiv.innerHTML = `
         <div class="message-content" style="text-align: center; padding: 8px;">
-          <button onclick="window.chatWidget.showCustomerInfoDialog()" style="background: #28a745; color: white; border: none; padding: 8px 16px; border-radius: 20px; cursor: pointer; font-size: 12px;">Connect with Vanguard Sales Representative</button>
+          <button class="connect-btn" style="background: #28a745; color: white; border: none; padding: 8px 16px; border-radius: 20px; cursor: pointer; font-size: 12px;">Connect with Vanguard Sales Representative</button>
         </div>
       `;
+      
+      const button = buttonDiv.querySelector('.connect-btn');
+      button.addEventListener('click', () => this.showCustomerInfoDialog());
       
       messagesContainer.appendChild(buttonDiv);
       messagesContainer.scrollTop = messagesContainer.scrollHeight;
