@@ -959,19 +959,19 @@ async function handleHumanRequest(sessionId) {
   const conversation = conversations.get(sessionId);
   if (!conversation) return;
 
-  // Check if any agents are available (logged in agents, even if WebSocket is temporarily disconnected)
-  if (humanAgents.size === 0) {
+  // Get agents with active WebSocket connections for notifications
+  const connectedAgents = Array.from(humanAgents.values()).filter(agent => 
+    agent.ws && agent.ws.readyState === WebSocket.OPEN
+  );
+
+  // Check if any agents are available with active connections
+  if (connectedAgents.length === 0) {
     conversation.customerWs.send(JSON.stringify({
       type: 'no_agents_available',
       message: 'Sorry, no human agents are currently available. Please try again later or continue chatting with me!'
     }));
     return;
   }
-  
-  // Get agents with active WebSocket connections for notifications
-  const connectedAgents = Array.from(humanAgents.values()).filter(agent => 
-    agent.ws && agent.ws.readyState === WebSocket.OPEN
-  );
 
   if (!waitingQueue.includes(sessionId)) {
     waitingQueue.push(sessionId);
