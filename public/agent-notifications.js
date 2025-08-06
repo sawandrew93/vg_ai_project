@@ -34,9 +34,6 @@ class AgentNotificationSystem {
         
         // Don't create connection if we're on agent dashboard (it has its own)
         if (window.location.pathname === '/agent') return;
-        
-        // Don't create connection if agent dashboard is open in another tab
-        if (localStorage.getItem('agentDashboardActive') === 'true') return;
 
         const wsUrl = `ws://${window.location.host}`;
         this.ws = new WebSocket(wsUrl);

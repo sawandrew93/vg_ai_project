@@ -698,12 +698,19 @@ function handleAgentJoin(ws, data) {
   const wasReconnected = handleAgentReconnection(agentId, ws, user);
 
   if (!wasReconnected) {
-    humanAgents.set(agentId, {
-      ws,
-      user,
-      status: 'online',
-      sessionId: null
-    });
+    // If agent already exists, just update the WebSocket (don't create duplicate)
+    if (humanAgents.has(agentId)) {
+      const existingAgent = humanAgents.get(agentId);
+      existingAgent.ws = ws;
+      console.log(`Updated WebSocket for existing agent ${user.name}`);
+    } else {
+      humanAgents.set(agentId, {
+        ws,
+        user,
+        status: 'online',
+        sessionId: null
+      });
+    }
   }
 
   ws.send(JSON.stringify({

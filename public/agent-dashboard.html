@@ -106,29 +106,8 @@
                     Notification.requestPermission();
                 }
 
-                // Initialize sound-only notification system
-                this.soundSystem = {
-                    playNotificationSound: () => {
-                        try {
-                            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                            for (let i = 0; i < 3; i++) {
-                                const oscillator = audioContext.createOscillator();
-                                const gainNode = audioContext.createGain();
-                                oscillator.connect(gainNode);
-                                gainNode.connect(audioContext.destination);
-                                const startTime = audioContext.currentTime + (i * 0.4);
-                                oscillator.frequency.setValueAtTime(1000, startTime);
-                                oscillator.frequency.setValueAtTime(800, startTime + 0.1);
-                                gainNode.gain.setValueAtTime(0.6, startTime);
-                                gainNode.gain.exponentialRampToValueAtTime(0.01, startTime + 0.2);
-                                oscillator.start(startTime);
-                                oscillator.stop(startTime + 0.2);
-                            }
-                        } catch (error) {
-                            console.log('Could not play notification sound:', error);
-                        }
-                    }
-                };
+                // Initialize sound system
+                this.initSoundSystem();
 
                 // Check if already logged in
                 this.token = localStorage.getItem('agentToken');
@@ -139,6 +118,29 @@
                 }
 
                 this.setupEventListeners();
+            }
+
+            initSoundSystem() {
+                this.playNotificationSound = () => {
+                    try {
+                        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                        for (let i = 0; i < 3; i++) {
+                            const oscillator = audioContext.createOscillator();
+                            const gainNode = audioContext.createGain();
+                            oscillator.connect(gainNode);
+                            gainNode.connect(audioContext.destination);
+                            const startTime = audioContext.currentTime + (i * 0.4);
+                            oscillator.frequency.setValueAtTime(1000, startTime);
+                            oscillator.frequency.setValueAtTime(800, startTime + 0.1);
+                            gainNode.gain.setValueAtTime(0.6, startTime);
+                            gainNode.gain.exponentialRampToValueAtTime(0.01, startTime + 0.2);
+                            oscillator.start(startTime);
+                            oscillator.stop(startTime + 0.2);
+                        }
+                    } catch (error) {
+                        console.log('Could not play notification sound:', error);
+                    }
+                };
             }
 
             setupEventListeners() {
@@ -156,11 +158,6 @@
                 });
                 document.getElementById('canned-btn').addEventListener('click', () => this.toggleCannedResponses());
                 document.getElementById('end-chat-btn').addEventListener('click', () => this.endChat());
-                
-                // Clear flag when page is closed
-                window.addEventListener('beforeunload', () => {
-                    localStorage.removeItem('agentDashboardActive');
-                });
             }
 
             async validateToken() {
@@ -247,7 +244,6 @@
 
             logout() {
                 localStorage.removeItem('agentToken');
-                localStorage.removeItem('agentDashboardActive');
                 if (this.ws) {
                     this.ws.close();
                 }
@@ -261,9 +257,6 @@
                 if (this.ws && this.ws.readyState === WebSocket.OPEN) {
                     this.ws.close();
                 }
-                
-                // Mark agent dashboard as active to prevent duplicate connections
-                localStorage.setItem('agentDashboardActive', 'true');
 
                 this.updateConnectionStatus('connecting', 'Connecting to server...');
 
@@ -608,37 +601,10 @@
                 }
 
                 // Play notification sound
-                this.soundSystem.playNotificationSound();
+                this.playNotificationSound();
             }
 
-            playNotificationSound() {
-                try {
-                    // Create audio context for notification sound
-                    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                    
-                    // Play multiple beeps for attention
-                    for (let i = 0; i < 3; i++) {
-                        const oscillator = audioContext.createOscillator();
-                        const gainNode = audioContext.createGain();
-                        
-                        oscillator.connect(gainNode);
-                        gainNode.connect(audioContext.destination);
-                        
-                        const startTime = audioContext.currentTime + (i * 0.4);
-                        
-                        oscillator.frequency.setValueAtTime(1000, startTime);
-                        oscillator.frequency.setValueAtTime(800, startTime + 0.1);
-                        
-                        gainNode.gain.setValueAtTime(0.6, startTime);
-                        gainNode.gain.exponentialRampToValueAtTime(0.01, startTime + 0.2);
-                        
-                        oscillator.start(startTime);
-                        oscillator.stop(startTime + 0.2);
-                    }
-                } catch (error) {
-                    console.log('Could not play notification sound:', error);
-                }
-            }
+
 
             dismissNotification() {
                 document.getElementById('notification').style.display = 'none';
