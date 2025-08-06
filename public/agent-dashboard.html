@@ -4,6 +4,7 @@
     <title>Support Agent Dashboard</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="agent-dashboard.css">
+    <script src="agent-notifications.js"></script>
 </head>
 <body>
     <!-- Login Form -->
@@ -375,6 +376,11 @@
 
                 // Show desktop notification and play sound
                 this.showDesktopNotification(data);
+                
+                // Use global sound service if available
+                if (window.agentSoundService) {
+                    window.agentSoundService.playNotificationSound();
+                }
             }
 
             acceptRequest(sessionId = null, data = null) {
