@@ -959,18 +959,19 @@ async function handleHumanRequest(sessionId) {
   const conversation = conversations.get(sessionId);
   if (!conversation) return;
 
-  // Check if any agents are available (either connected via WebSocket or logged in)
-  const availableAgents = Array.from(humanAgents.values()).filter(agent => 
-    agent.ws && agent.ws.readyState === WebSocket.OPEN
-  );
-  
-  if (availableAgents.length === 0) {
+  // Check if any agents are available (logged in agents, even if WebSocket is temporarily disconnected)
+  if (humanAgents.size === 0) {
     conversation.customerWs.send(JSON.stringify({
       type: 'no_agents_available',
       message: 'Sorry, no human agents are currently available. Please try again later or continue chatting with me!'
     }));
     return;
   }
+  
+  // Get agents with active WebSocket connections for notifications
+  const connectedAgents = Array.from(humanAgents.values()).filter(agent => 
+    agent.ws && agent.ws.readyState === WebSocket.OPEN
+  );
 
   if (!waitingQueue.includes(sessionId)) {
     waitingQueue.push(sessionId);
@@ -978,8 +979,8 @@ async function handleHumanRequest(sessionId) {
 
   const queuePosition = waitingQueue.indexOf(sessionId) + 1;
 
-  // Only send notifications to agents with active WebSocket connections
-  availableAgents.forEach((agentData, index) => {
+  // Send notifications to agents with active WebSocket connections
+  connectedAgents.forEach((agentData) => {
     agentData.ws.send(JSON.stringify({
       type: 'pending_request',
       sessionId,
@@ -1166,20 +1167,9 @@ wss.on('connection', (ws) => {
           }
         }
 
-        humanAgents.delete(agentId);
-
-        humanAgents.forEach((otherAgentData, otherId) => {
-          if (otherAgentData.ws && otherAgentData.ws.readyState === WebSocket.OPEN) {
-            otherAgentData.ws.send(JSON.stringify({
-              type: 'agent_left',
-              agentId,
-              agentName: agentData.user.name,
-              totalAgents: humanAgents.size
-            }));
-          }
-        });
-
-        console.log(`Agent ${agentData.user.name} (${agentId}) disconnected`);
+        // Don't delete agent, just mark WebSocket as null to keep them available
+        agentData.ws = null;
+        console.log(`Agent ${agentData.user.name} (${agentId}) WebSocket disconnected but keeping agent available`);
         break;
       }
     }
