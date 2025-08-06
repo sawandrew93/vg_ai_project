@@ -217,10 +217,11 @@
             <div id="idle-timeout-dialog" class="handoff-dialog" style="display: none;">
               <div class="handoff-content">
                 <h4>Session Timeout</h4>
-                <p>You've been idle for a while. Would you like to provide feedback before ending the session?</p>
-                <div class="handoff-buttons">
+                <p>You've been idle for a while. What would you like to do?</p>
+                <div class="handoff-buttons" style="flex-direction: column; gap: 8px;">
                   <button id="idle-feedback-btn" class="handoff-btn handoff-yes">Give Feedback</button>
                   <button id="idle-continue-btn" class="handoff-btn handoff-no">Continue Session</button>
+                  <button id="idle-end-btn" class="handoff-btn" style="background: #dc3545; color: white;">End Session</button>
                 </div>
               </div>
             </div>
@@ -469,8 +470,8 @@
         }
 
         #file-upload {
-          background: #007bff;
-          color: white;
+          background: #17a2b8;
+          color: #ffffff;
           padding: 12px;
           border: none;
           border-radius: 50%;
@@ -858,6 +859,10 @@
       document.getElementById('idle-continue-btn').addEventListener('click', () => {
         this.handleIdleContinue();
       });
+
+      document.getElementById('idle-end-btn').addEventListener('click', () => {
+        this.handleIdleEndSession();
+      });
     }
 
     clearChatHistory() {
@@ -1199,6 +1204,20 @@
     handleIdleContinue() {
       document.getElementById('idle-timeout-dialog').style.display = 'none';
       this.resetIdleTimer();
+    }
+
+    handleIdleEndSession() {
+      document.getElementById('idle-timeout-dialog').style.display = 'none';
+      this.clearSession();
+      this.sessionId = this.getOrCreateSessionId();
+      
+      const messagesContainer = document.getElementById('chat-messages');
+      messagesContainer.innerHTML = '';
+      this.addMessage('Session ended. Thank you for using our chat!', 'system', false);
+      this.addMessage("I can help you understand how our products and services can help you. Please ask me your question and I will do my best to answer. I can also connect you with a Vanguard sales representative.", 'bot', false);
+      
+      this.isConnectedToHuman = false;
+      this.updateConnectionStatus('AI Assistant', 'Ready to help');
     }
 
     requestHuman() {
