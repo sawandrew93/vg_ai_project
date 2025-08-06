@@ -748,7 +748,7 @@ function handleAgentJoin(ws, data) {
   }
 }
 
-function handleAcceptRequest(sessionId, agentId, acceptingWs = null) {
+function handleAcceptRequest(sessionId, agentId) {
   const conversation = conversations.get(sessionId);
   const agentData = humanAgents.get(agentId);
 
@@ -758,21 +758,14 @@ function handleAcceptRequest(sessionId, agentId, acceptingWs = null) {
   }
 
   if (conversation.hasHuman) {
-    const targetWs = acceptingWs || agentData.ws;
-    if (targetWs && targetWs.readyState === WebSocket.OPEN) {
-      targetWs.send(JSON.stringify({
+    if (agentData.ws && agentData.ws.readyState === WebSocket.OPEN) {
+      agentData.ws.send(JSON.stringify({
         type: 'request_already_taken',
         message: 'This customer has already been assigned to another agent',
         sessionId
       }));
     }
     return;
-  }
-
-  // Only update WebSocket if a new one is provided and different from current
-  if (acceptingWs && acceptingWs !== agentData.ws) {
-    console.log(`Updating agent ${agentId} WebSocket connection`);
-    agentData.ws = acceptingWs;
   }
 
   conversation.hasHuman = true;
@@ -1015,8 +1008,8 @@ async function handleWebSocketMessage(ws, data) {
         await handleHumanRequest(data.sessionId);
         break;
       case 'accept_request':
-        console.log(`Agent ${data.agentId} accepting request ${data.sessionId} via WebSocket`);
-        handleAcceptRequest(data.sessionId, data.agentId, ws);
+        console.log(`Agent ${data.agentId} accepting request ${data.sessionId}`);
+        handleAcceptRequest(data.sessionId, data.agentId);
         break;
       case 'end_chat':
         handleEndChat(data.sessionId);
