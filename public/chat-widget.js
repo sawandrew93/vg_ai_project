@@ -898,7 +898,6 @@
         messagesContainer.innerHTML = '';
 
         this.addMessage('Session ended. Thank you for chatting with us!', 'system', false);
-        this.addMessage("I can help you understand how our products and services can help you. Please ask me your question and I will do my best to answer. I can also connect you with a Vanguard sales representative.", 'bot', false);
 
         this.isConnectedToHuman = false;
         this.updateConnectionStatus('AI Assistant', 'Ready to help');
@@ -1071,7 +1070,6 @@
           // Clear chat messages after timeout
           const messagesContainer = document.getElementById('chat-messages');
           messagesContainer.innerHTML = '';
-          this.addMessage("I can help you understand how our products and services can help you. Please ask me your question and I will do my best to answer. I can also connect you with a Vanguard sales representative.", 'bot', false);
           break;
 
         case 'error':
@@ -1214,7 +1212,6 @@
       const messagesContainer = document.getElementById('chat-messages');
       messagesContainer.innerHTML = '';
       this.addMessage('Session ended. Thank you for using our chat!', 'system', false);
-      this.addMessage("I can help you understand how our products and services can help you. Please ask me your question and I will do my best to answer. I can also connect you with a Vanguard sales representative.", 'bot', false);
       
       this.isConnectedToHuman = false;
       this.updateConnectionStatus('AI Assistant', 'Ready to help');
@@ -1442,7 +1439,6 @@
               this.sessionId = this.getOrCreateSessionId();
               const messagesContainer = document.getElementById('chat-messages');
               messagesContainer.innerHTML = '';
-              this.addMessage("I can help you understand how our products and services can help you. Please ask me your question and I will do my best to answer. I can also connect you with a Vanguard sales representative.", 'bot', false);
             }, 2000);
           }
         }
