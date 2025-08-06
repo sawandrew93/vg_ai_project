@@ -80,6 +80,10 @@
                 <input type="date" id="dateTo">
             </div>
             <div class="filter-group">
+                <label>Country</label>
+                <input type="text" id="countryFilter" placeholder="Enter country">
+            </div>
+            <div class="filter-group">
                 <label>&nbsp;</label>
                 <button onclick="applyFilters()" class="btn">Apply Filters</button>
             </div>
@@ -114,11 +118,12 @@
                         <th>Category</th>
                         <th>Confidence</th>
                         <th>Response Type</th>
+                        <th>Country</th>
                         <th>Session</th>
                     </tr>
                 </thead>
                 <tbody id="intentsTableBody">
-                    <tr><td colspan="7" class="loading">Loading intents...</td></tr>
+                    <tr><td colspan="8" class="loading">Loading intents...</td></tr>
                 </tbody>
             </table>
         </div>
@@ -140,11 +145,13 @@
                 const responseFilter = document.getElementById('responseFilter').value;
                 const dateFrom = document.getElementById('dateFrom').value;
                 const dateTo = document.getElementById('dateTo').value;
+                const countryFilter = document.getElementById('countryFilter').value;
 
                 if (categoryFilter) params.append('intent_category', categoryFilter);
                 if (responseFilter) params.append('response_type', responseFilter);
                 if (dateFrom) params.append('date_from', dateFrom);
                 if (dateTo) params.append('date_to', dateTo);
+                if (countryFilter) params.append('customer_country', countryFilter);
 
                 const response = await fetch(`/api/intents?${params}`, {
                     headers: { 'Authorization': `Bearer ${token}` }
@@ -158,7 +165,7 @@
             } catch (error) {
                 console.error('Error loading intents:', error);
                 document.getElementById('intentsTableBody').innerHTML = 
-                    '<tr><td colspan="7" class="no-data">Error loading intents</td></tr>';
+                    '<tr><td colspan="8" class="no-data">Error loading intents</td></tr>';
             }
         }
 
@@ -170,7 +177,7 @@
             const tbody = document.getElementById('intentsTableBody');
             
             if (intents.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="7" class="no-data">No intents found</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="8" class="no-data">No intents found</td></tr>';
                 return;
             }
 
@@ -198,6 +205,7 @@
                             ${formatResponseType(intent.response_type)}
                         </span>
                     </td>
+                    <td>${intent.customer_country || '-'}</td>
                     <td style="font-family: monospace; font-size: 0.8em;">${intent.session_id.substring(0, 12)}...</td>
                 </tr>
             `).join('');

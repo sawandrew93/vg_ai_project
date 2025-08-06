@@ -1767,6 +1767,9 @@ app.get('/api/intents', verifyToken, async (req, res) => {
     if (req.query.date_to) {
       query = query.lte('created_at', req.query.date_to + 'T23:59:59');
     }
+    if (req.query.customer_country) {
+      query = query.ilike('customer_country', `%${req.query.customer_country}%`);
+    }
 
     const { data, error } = await query.range(offset, offset + limit - 1);
 
