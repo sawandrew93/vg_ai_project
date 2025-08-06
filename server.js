@@ -956,11 +956,16 @@ function handleEndChat(sessionId, endReason = 'agent_ended') {
 }
 
 async function handleHumanRequest(sessionId, customerInfo = null) {
+  console.log('🔍 handleHumanRequest called with:', { sessionId, customerInfo });
   const conversation = conversations.get(sessionId);
-  if (!conversation) return;
+  if (!conversation) {
+    console.log('❌ No conversation found for session:', sessionId);
+    return;
+  }
 
   // Store customer info if provided
   if (customerInfo) {
+    console.log('✅ Customer info provided:', customerInfo);
     conversation.customerInfo = customerInfo;
     
     // Log customer intent with info
@@ -974,7 +979,9 @@ async function handleHumanRequest(sessionId, customerInfo = null) {
       'human_request',
       customerInfo
     );
+    console.log('✅ Customer intent logged with info');
   } else {
+    console.log('⚠️ No customer info provided');
     // Log human request without customer info
     await knowledgeDB.logCustomerIntent(
       sessionId,
@@ -985,6 +992,7 @@ async function handleHumanRequest(sessionId, customerInfo = null) {
       [],
       'human_request'
     );
+    console.log('✅ Customer intent logged without info');
   }
 
   // Get all agents with active WebSocket connections for notifications
@@ -1045,6 +1053,7 @@ async function handleWebSocketMessage(ws, data) {
         handleAgentMessage(data.sessionId, data.message);
         break;
       case 'request_human':
+        console.log('🔍 Received request_human message:', data);
         await handleHumanRequest(data.sessionId, data.customerInfo);
         break;
       case 'accept_request':
