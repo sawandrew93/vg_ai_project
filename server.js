@@ -88,7 +88,7 @@ async function initializeAgentUsers() {
 
 // Constants
 const CUSTOMER_TIMEOUT = 10 * 60 * 1000;
-const CUSTOMER_IDLE_TIMEOUT = 10 * 60 * 1000; // 10 minutes idle timeout
+const CUSTOMER_IDLE_TIMEOUT = 10 * 1000; // 10 seconds idle timeout for testing
 const AGENT_RECONNECT_WINDOW = 5 * 60 * 1000;
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-here';
 const SIMILARITY_THRESHOLD = 0.5; // Minimum similarity for knowledge base answers
@@ -955,11 +955,28 @@ function handleEndChat(sessionId, endReason = 'agent_ended') {
   console.log(`Chat ended for session ${sessionId} by ${endReason}. Agent: ${agentData ? agentData.user.name : 'Unknown'}`);
 }
 
-async function handleHumanRequest(sessionId) {
+async function handleHumanRequest(sessionId, customerInfo = null) {
   const conversation = conversations.get(sessionId);
   if (!conversation) return;
 
-  // Get agents with active WebSocket connections for notifications
+  // Store customer info if provided
+  if (customerInfo) {
+    conversation.customerInfo = customerInfo;
+    
+    // Log customer intent with info
+    await knowledgeDB.logCustomerIntent(
+      sessionId,
+      'Customer requested human support',
+      'human_request',
+      'support',
+      0,
+      [],
+      'human_request',
+      customerInfo
+    );
+  }
+
+  // Get all agents with active WebSocket connections for notifications
   const connectedAgents = Array.from(humanAgents.values()).filter(agent => 
     agent.ws && agent.ws.readyState === WebSocket.OPEN
   );
@@ -1017,7 +1034,7 @@ async function handleWebSocketMessage(ws, data) {
         handleAgentMessage(data.sessionId, data.message);
         break;
       case 'request_human':
-        await handleHumanRequest(data.sessionId);
+        await handleHumanRequest(data.sessionId, data.customerInfo);
         break;
       case 'accept_request':
         console.log(`Agent ${data.agentId} accepting request ${data.sessionId}`);
@@ -1032,7 +1049,7 @@ async function handleWebSocketMessage(ws, data) {
       case 'handoff_response':
         // Handle customer's response to handoff offer
         if (data.accepted) {
-          await handleHumanRequest(data.sessionId);
+          await handleHumanRequest(data.sessionId, data.customerInfo);
         } else {
           const conversation = conversations.get(data.sessionId);
           if (conversation && conversation.customerWs) {

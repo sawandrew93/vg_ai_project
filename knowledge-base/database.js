@@ -229,19 +229,28 @@ class KnowledgeBaseDB {
     }
   }
 
-  async logCustomerIntent(sessionId, message, intent, category, confidence, matchedDocs, responseType) {
+  async logCustomerIntent(sessionId, message, intent, category, confidence, matchedDocs, responseType, customerInfo = null) {
     try {
+      const intentData = {
+        session_id: sessionId,
+        customer_message: message,
+        detected_intent: intent,
+        intent_category: category,
+        confidence_score: confidence,
+        matched_documents: matchedDocs,
+        response_type: responseType
+      };
+
+      if (customerInfo) {
+        intentData.customer_firstname = customerInfo.firstname;
+        intentData.customer_lastname = customerInfo.lastname;
+        intentData.customer_email = customerInfo.email;
+        intentData.customer_country = customerInfo.country;
+      }
+
       const { error } = await this.supabase
         .from('customer_intents')
-        .insert([{
-          session_id: sessionId,
-          customer_message: message,
-          detected_intent: intent,
-          intent_category: category,
-          confidence_score: confidence,
-          matched_documents: matchedDocs,
-          response_type: responseType
-        }]);
+        .insert([intentData]);
 
       if (error) throw error;
     } catch (error) {

@@ -181,6 +181,24 @@
               </div>
             </div>
 
+            <!-- Customer Info Dialog -->
+            <div id="customer-info-dialog" class="handoff-dialog" style="display: none;">
+              <div class="handoff-content">
+                <h4>Connect with Human Support</h4>
+                <p>Please provide your information to connect with our support team:</p>
+                <div class="customer-form">
+                  <input type="text" id="customer-firstname" placeholder="First Name *" required>
+                  <input type="text" id="customer-lastname" placeholder="Last Name *" required>
+                  <input type="email" id="customer-email" placeholder="Email Address *" required>
+                  <input type="text" id="customer-country" placeholder="Country *" required>
+                </div>
+                <div class="handoff-buttons">
+                  <button id="customer-info-submit" class="handoff-btn handoff-yes">Connect</button>
+                  <button id="customer-info-cancel" class="handoff-btn handoff-no">Cancel</button>
+                </div>
+              </div>
+            </div>
+
             <!-- Handoff Confirmation Dialog -->
             <div id="handoff-dialog" class="handoff-dialog" style="display: none;">
               <div class="handoff-content">
@@ -594,6 +612,27 @@
           transform: translateY(-1px);
         }
 
+        .customer-form {
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+          margin-bottom: 20px;
+        }
+
+        .customer-form input {
+          padding: 12px;
+          border: 1px solid #ddd;
+          border-radius: 6px;
+          font-size: 14px;
+          font-family: inherit;
+        }
+
+        .customer-form input:focus {
+          outline: none;
+          border-color: ${this.options.primaryColor};
+          box-shadow: 0 0 0 2px ${this.options.primaryColor}20;
+        }
+
         #satisfaction-survey {
           position: absolute;
           bottom: 60px;
@@ -776,6 +815,15 @@
 
       document.getElementById('handoff-no').addEventListener('click', () => {
         this.handleHandoffResponse(false);
+      });
+
+      // Customer info dialog event listeners
+      document.getElementById('customer-info-submit').addEventListener('click', () => {
+        this.submitCustomerInfo();
+      });
+
+      document.getElementById('customer-info-cancel').addEventListener('click', () => {
+        this.hideCustomerInfoDialog();
       });
     }
 
@@ -1064,16 +1112,59 @@
     }
 
     requestHuman() {
+      this.showCustomerInfoDialog();
+    }
+
+    showCustomerInfoDialog() {
+      document.getElementById('customer-info-dialog').style.display = 'block';
+    }
+
+    hideCustomerInfoDialog() {
+      document.getElementById('customer-info-dialog').style.display = 'none';
+      this.clearCustomerForm();
+    }
+
+    clearCustomerForm() {
+      document.getElementById('customer-firstname').value = '';
+      document.getElementById('customer-lastname').value = '';
+      document.getElementById('customer-email').value = '';
+      document.getElementById('customer-country').value = '';
+    }
+
+    submitCustomerInfo() {
+      const firstname = document.getElementById('customer-firstname').value.trim();
+      const lastname = document.getElementById('customer-lastname').value.trim();
+      const email = document.getElementById('customer-email').value.trim();
+      const country = document.getElementById('customer-country').value.trim();
+
+      if (!firstname || !lastname || !email || !country) {
+        alert('Please fill in all required fields.');
+        return;
+      }
+
+      if (!this.isValidEmail(email)) {
+        alert('Please enter a valid email address.');
+        return;
+      }
+
+      this.customerInfo = { firstname, lastname, email, country };
+      this.hideCustomerInfoDialog();
+
       if (this.ws && this.ws.readyState === WebSocket.OPEN) {
         this.ws.send(JSON.stringify({
           type: 'request_human',
-          sessionId: this.sessionId
+          sessionId: this.sessionId,
+          customerInfo: this.customerInfo
         }));
 
         this.addMessage('Requesting human agent...', 'system');
       } else {
         this.addMessage('Unable to connect to server. Please try again.', 'system');
       }
+    }
+
+    isValidEmail(email) {
+      return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
     }
 
     addMessage(message, sender, saveToStorage = true) {
