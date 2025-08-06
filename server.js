@@ -959,7 +959,12 @@ async function handleHumanRequest(sessionId) {
   const conversation = conversations.get(sessionId);
   if (!conversation) return;
 
-  if (humanAgents.size === 0) {
+  // Check if any agents are available (either connected via WebSocket or logged in)
+  const availableAgents = Array.from(humanAgents.values()).filter(agent => 
+    agent.ws && agent.ws.readyState === WebSocket.OPEN
+  );
+  
+  if (availableAgents.length === 0) {
     conversation.customerWs.send(JSON.stringify({
       type: 'no_agents_available',
       message: 'Sorry, no human agents are currently available. Please try again later or continue chatting with me!'
@@ -973,16 +978,15 @@ async function handleHumanRequest(sessionId) {
 
   const queuePosition = waitingQueue.indexOf(sessionId) + 1;
 
-  humanAgents.forEach((agentData, agentId) => {
-    if (agentData.ws && agentData.ws.readyState === WebSocket.OPEN) {
-      agentData.ws.send(JSON.stringify({
-        type: 'pending_request',
-        sessionId,
-        position: queuePosition,
-        totalInQueue: waitingQueue.length,
-        lastMessage: conversation.messages.slice(-1)[0]?.content || "Customer wants to speak with human"
-      }));
-    }
+  // Only send notifications to agents with active WebSocket connections
+  availableAgents.forEach((agentData, index) => {
+    agentData.ws.send(JSON.stringify({
+      type: 'pending_request',
+      sessionId,
+      position: queuePosition,
+      totalInQueue: waitingQueue.length,
+      lastMessage: conversation.messages.slice(-1)[0]?.content || "Customer wants to speak with human"
+    }));
   });
 
   if (conversation.customerWs && conversation.customerWs.readyState === WebSocket.OPEN) {
