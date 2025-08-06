@@ -1049,7 +1049,14 @@ async function handleWebSocketMessage(ws, data) {
       case 'handoff_response':
         // Handle customer's response to handoff offer
         if (data.accepted) {
-          await handleHumanRequest(data.sessionId, data.customerInfo);
+          // Don't directly connect, let client show customer info dialog
+          const conversation = conversations.get(data.sessionId);
+          if (conversation && conversation.customerWs) {
+            conversation.customerWs.send(JSON.stringify({
+              type: 'show_customer_info_dialog',
+              sessionId: data.sessionId
+            }));
+          }
         } else {
           const conversation = conversations.get(data.sessionId);
           if (conversation && conversation.customerWs) {
