@@ -1723,8 +1723,25 @@ app.get('/api/attachments/:sessionId', verifyToken, async (req, res) => {
   }
 });
 
-// Serve uploaded files
-app.use('/uploads', express.static('uploads'));
+// Serve uploaded files with original filename
+app.get('/uploads/:filename', async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from('customer_attachments')
+      .select('original_filename')
+      .eq('filename', req.params.filename)
+      .single();
+
+    if (error || !data) {
+      return res.status(404).send('File not found');
+    }
+
+    const filePath = path.join(__dirname, 'uploads', req.params.filename);
+    res.download(filePath, data.original_filename);
+  } catch (error) {
+    res.status(500).send('Error downloading file');
+  }
+});
 
 // Get customer intents with filters
 app.get('/api/intents', verifyToken, async (req, res) => {
