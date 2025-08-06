@@ -3,40 +3,314 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chatbot Test Page</title>
-    <link rel="stylesheet" href="chatbot.css">
+    <title>Vanguard Business Consulting - Strategic Business Solutions</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            line-height: 1.6;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        header {
+            background: #1a365d;
+            color: white;
+            padding: 1rem 0;
+            position: fixed;
+            width: 100%;
+            top: 0;
+            z-index: 1000;
+        }
+
+        nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+
+        .nav-links {
+            display: flex;
+            list-style: none;
+            gap: 2rem;
+        }
+
+        .nav-links a {
+            color: white;
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+
+        .nav-links a:hover {
+            color: #4299e1;
+        }
+
+        .hero {
+            background: linear-gradient(135deg, #1a365d 0%, #2d5a87 100%);
+            color: white;
+            padding: 120px 0 80px;
+            text-align: center;
+        }
+
+        .hero h1 {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        .hero p {
+            font-size: 1.2rem;
+            margin-bottom: 2rem;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .cta-button {
+            background: #4299e1;
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 5px;
+            font-size: 1.1rem;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            transition: background 0.3s;
+        }
+
+        .cta-button:hover {
+            background: #3182ce;
+        }
+
+        .services {
+            padding: 80px 0;
+            background: #f7fafc;
+        }
+
+        .services h2 {
+            text-align: center;
+            font-size: 2.5rem;
+            margin-bottom: 3rem;
+            color: #1a365d;
+        }
+
+        .services-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+        }
+
+        .service-card {
+            background: white;
+            padding: 2rem;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+
+        .service-card h3 {
+            color: #1a365d;
+            margin-bottom: 1rem;
+        }
+
+        .about {
+            padding: 80px 0;
+        }
+
+        .about-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 3rem;
+            align-items: center;
+        }
+
+        .about h2 {
+            font-size: 2.5rem;
+            margin-bottom: 2rem;
+            color: #1a365d;
+        }
+
+        .contact {
+            background: #1a365d;
+            color: white;
+            padding: 80px 0;
+            text-align: center;
+        }
+
+        .contact h2 {
+            font-size: 2.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .contact-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            margin-top: 3rem;
+        }
+
+        .contact-item {
+            background: rgba(255,255,255,0.1);
+            padding: 2rem;
+            border-radius: 10px;
+        }
+
+        footer {
+            background: #0f1419;
+            color: white;
+            text-align: center;
+            padding: 2rem 0;
+        }
+
+        @media (max-width: 768px) {
+            .nav-links {
+                display: none;
+            }
+            
+            .hero h1 {
+                font-size: 2rem;
+            }
+            
+            .about-content {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
 </head>
 <body>
-    <div class="container">
-        <h1>Welcome to Our Website</h1>
-        <p>This is a test page to demonstrate the AI chatbot integration. The chat widget should appear in the bottom-right corner.</p>
-        <p>Try asking questions about our products, pricing, or support. You can also request to speak with a human agent.</p>
-    </div>
+    <header>
+        <nav class="container">
+            <div class="logo">Vanguard Business Consulting</div>
+            <ul class="nav-links">
+                <li><a href="#home">Home</a></li>
+                <li><a href="#services">Services</a></li>
+                <li><a href="#about">About</a></li>
+                <li><a href="#contact">Contact</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <section id="home" class="hero">
+        <div class="container">
+            <h1>Strategic Business Solutions</h1>
+            <p>Empowering businesses with innovative consulting services, strategic planning, and operational excellence to drive sustainable growth and competitive advantage.</p>
+            <a href="#contact" class="cta-button">Get Started Today</a>
+        </div>
+    </section>
+
+    <section id="services" class="services">
+        <div class="container">
+            <h2>Our Services</h2>
+            <div class="services-grid">
+                <div class="service-card">
+                    <h3>Strategic Planning</h3>
+                    <p>Comprehensive strategic planning services to help your business define clear objectives, identify growth opportunities, and create actionable roadmaps for success.</p>
+                </div>
+                <div class="service-card">
+                    <h3>Business Process Optimization</h3>
+                    <p>Streamline your operations with our process optimization expertise. We analyze, redesign, and implement efficient workflows to maximize productivity and reduce costs.</p>
+                </div>
+                <div class="service-card">
+                    <h3>Financial Advisory</h3>
+                    <p>Expert financial guidance including budgeting, forecasting, investment strategies, and risk management to ensure your business maintains strong financial health.</p>
+                </div>
+                <div class="service-card">
+                    <h3>Digital Transformation</h3>
+                    <p>Navigate the digital landscape with confidence. We help businesses leverage technology to improve efficiency, enhance customer experience, and drive innovation.</p>
+                </div>
+                <div class="service-card">
+                    <h3>Market Analysis</h3>
+                    <p>In-depth market research and competitive analysis to help you understand your industry landscape, identify opportunities, and make informed business decisions.</p>
+                </div>
+                <div class="service-card">
+                    <h3>Leadership Development</h3>
+                    <p>Build strong leadership capabilities within your organization through our comprehensive training programs and executive coaching services.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="about" class="about">
+        <div class="container">
+            <div class="about-content">
+                <div>
+                    <h2>About Vanguard BC</h2>
+                    <p>With over two decades of experience in business consulting, Vanguard Business Consulting has been at the forefront of helping organizations achieve their strategic objectives and operational excellence.</p>
+                    <p>Our team of seasoned professionals brings deep industry expertise across various sectors, providing tailored solutions that address the unique challenges and opportunities facing modern businesses.</p>
+                    <p>We believe in building long-term partnerships with our clients, working collaboratively to drive sustainable growth and competitive advantage in today's dynamic business environment.</p>
+                </div>
+                <div>
+                    <h3>Why Choose Vanguard BC?</h3>
+                    <ul style="list-style-type: none; padding: 0;">
+                        <li style="margin-bottom: 1rem;">✓ Proven track record of success</li>
+                        <li style="margin-bottom: 1rem;">✓ Industry-leading expertise</li>
+                        <li style="margin-bottom: 1rem;">✓ Customized solutions</li>
+                        <li style="margin-bottom: 1rem;">✓ Results-driven approach</li>
+                        <li style="margin-bottom: 1rem;">✓ Long-term partnership focus</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="contact" class="contact">
+        <div class="container">
+            <h2>Get In Touch</h2>
+            <p>Ready to transform your business? Contact us today to discuss how we can help you achieve your strategic objectives.</p>
+            <div class="contact-info">
+                <div class="contact-item">
+                    <h3>Phone</h3>
+                    <p>+1 (555) 123-4567</p>
+                </div>
+                <div class="contact-item">
+                    <h3>Email</h3>
+                    <p>info@vanguardbc.com</p>
+                </div>
+                <div class="contact-item">
+                    <h3>Office</h3>
+                    <p>123 Business District<br>Suite 456<br>City, State 12345</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2024 Vanguard Business Consulting. All rights reserved.</p>
+        </div>
+    </footer>
 
     <!-- Chat Widget Configuration -->
-    <!-- Chat Widget Configuration -->
-
     <script>
+        const getWebSocketUrl = () => {
+            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const hostname = window.location.hostname;
+            const port = window.location.port || (window.location.protocol === 'https:' ? '443' : '80');
+            const wsPort = port === '80' || port === '443' ? '3000' : port;
+            return `${protocol}//${hostname}:${wsPort}`;
+        };
 
-    const getWebSocketUrl = () => {
-        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-        const hostname = window.location.hostname;
-        const port = window.location.port || (window.location.protocol === 'https:' ? '443' : '80');
-
-        // If you're running on a specific port (like 3000), specify it:
-        const wsPort = port === '80' || port === '443' ? '3000' : port;
-
-        return `${protocol}//${hostname}:${wsPort}`;
-    };
-
-    window.chatWidgetConfig = {
-        serverUrl: getWebSocketUrl(),
-        position: 'bottom-right',
-        primaryColor: '#007bff',
-        title: 'Support Chat'
-    };
-
-    console.log('Dynamic WebSocket URL:', window.chatWidgetConfig.serverUrl);
+        window.chatWidgetConfig = {
+            serverUrl: getWebSocketUrl(),
+            position: 'bottom-right',
+            primaryColor: '#1a365d',
+            title: 'Vanguard Support'
+        };
     </script>
 
     <!-- Load Chat Widget -->
