@@ -281,7 +281,7 @@
                         });
                         break;
                     case 'customer_assigned':
-                        this.acceptRequest(data);
+                        this.acceptRequest(null, data);
                         break;
                     case 'customer_message':
                         this.addMessage(`Customer: ${data.message}`, 'customer-msg');
@@ -292,8 +292,21 @@
                     case 'request_already_taken':
                         this.handleRequestAlreadyTaken(data);
                         break;
+                    case 'customer_file_uploaded':
+                        this.addMessage(`📎 Customer uploaded: ${data.fileInfo.filename}`, 'system-msg');
+                        this.showFileAttachment(data.fileInfo);
+                        break;
+                    case 'connection_restored':
+                        this.handleConnectionRestored(data);
+                        break;
                     case 'session_ended_by_customer':
                         this.handleSessionEndedByCustomer(data);
+                        break;
+                    case 'session_no_longer_active':
+                        this.handleSessionNoLongerActive(data);
+                        break;
+                    case 'auth_error':
+                        this.logout();
                         break;
                     default:
                         console.log('Unhandled message type:', data.type);
