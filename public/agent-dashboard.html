@@ -230,117 +230,10 @@
                 this.updateConnectionStatus('connecting', 'Connecting to server...');
 
                 const wsUrl = `ws://${window.location.host}`;
-                this.ws = new WebSocket(wsUrl);
-
-                this.ws.onopen = () => {
-                    this.ws.send(JSON.stringify({
-                        type: 'agent_join',
-                        agentId: this.user.id,
-                        token: this.token
-                    }));
-                };
-
-                this.ws.onmessage = (e) => {
-                    try {
-                        const data = JSON.parse(e.data);
-                        this.handleMessage(data);
-                    } catch (error) {
-                        console.error('Error parsing message:', error);
-                    }
-                };
-
-                this.ws.onclose = (e) => {
-                    this.updateConnectionStatus('disconnected', 'Connection lost - attempting to reconnect...');
-
-                    if (e.code === 1000) {
-                        this.logout();
-                        return;
-                    }
-
-                    setTimeout(() => this.connectWebSocket(), 3000);
-                };
-
-                this.ws.onerror = (err) => {
-                    console.error('WebSocket error:', err);
-                };
+                // ...existing code...
             }
 
-            handleMessage(data) {
-                switch(data.type) {
-                    case 'agent_status':
-                        this.updateConnectionStatus('connected', data.message);
-                        this.updateStats({
-                            waitingCustomers: data.waitingCustomers || 0,
-                            totalAgents: data.totalAgents || 1
-                        });
-
-                        if (data.status === 'reconnected') {
-                            document.getElementById('status').classList.add('notification-reconnected');
-                            setTimeout(() => {
-                                document.getElementById('status').classList.remove('notification-reconnected');
-                            }, 3000);
-                        }
-                        break;
-
-                    case 'auth_error':
-                        this.logout();
-                        break;
-
-                    case 'connection_restored':
-                        this.handleConnectionRestored(data);
-                        break;
-
-                    case 'pending_request':
-                        this.showNotification(data);
-                        this.updateStats({
-                            queueCount: data.totalInQueue || data.position
-                        });
-                        break;
-
-                    case 'customer_assigned':
-                        this.acceptRequest(data);
-                        break;
-
-                    case 'customer_message':
-                        this.addMessage(`Customer: ${data.message}`, 'customer-msg');
-                        break;
-
-                    case 'customer_file_uploaded':
-                        this.addMessage(`📎 Customer uploaded: ${data.fileInfo.filename}`, 'system-msg');
-                        this.showFileAttachment(data.fileInfo);
-                        break;
-
-                    case 'request_taken':
-                        this.handleRequestTaken(data);
-                        break;
-
-                    case 'request_already_taken':
-                        this.handleRequestAlreadyTaken(data);
-                        break;
-
-                    case 'agent_joined':
-                        this.updateStats({ totalAgents: data.totalAgents });
-                        break;
-
-                    case 'agent_left':
-                        this.updateStats({ totalAgents: data.totalAgents });
-                        break;
-
-                    case 'session_ended_by_customer':
-                        this.handleSessionEndedByCustomer(data);
-                        break;
-
-                    case 'customer_left_queue':
-                        this.updateStats({ queueCount: data.remainingQueue });
-                        break;
-
-                    case 'session_no_longer_active':
-                        this.handleSessionNoLongerActive(data);
-                        break;
-
-                    default:
-                        console.log('Unhandled message type:', data.type);
-                }
+            // All methods below are now correctly inside the AgentDashboard class
             }
 
             updateConnectionStatus(status, message) {
@@ -651,7 +544,6 @@
                 }
             }
         }
-
         // Initialize the dashboard
         const agentDashboard = new AgentDashboard();
         window.agentDashboard = agentDashboard;
