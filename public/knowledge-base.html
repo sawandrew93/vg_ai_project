@@ -279,6 +279,12 @@
         <div class="header">
             <h1>🧠 Knowledge Base Management</h1>
             <p>Upload and manage your AI chatbot's knowledge base</p>
+            <div style="position: absolute; top: 20px; right: 20px;">
+                <button onclick="window.location.href='/agent'" class="btn" style="margin-right: 10px;">🏠 Agent Dashboard</button>
+                <button onclick="window.location.href='/feedback'" class="btn" style="margin-right: 10px;">📊 Feedback</button>
+                <button onclick="window.location.href='/intents'" class="btn" style="margin-right: 10px;">🎯 Intents</button>
+                <button onclick="logout()" class="btn btn-secondary">Logout</button>
+            </div>
         </div>
 
         <div class="tabs">
@@ -361,9 +367,9 @@
     <script>
         // Authentication check
         function checkAuth() {
-            const token = localStorage.getItem('kb_token');
+            const token = localStorage.getItem('agentToken');
             if (!token) {
-                window.location.href = '/kb-login';
+                window.location.href = '/agent';
                 return false;
             }
             return token;
@@ -383,21 +389,10 @@
                 
                 const result = await response.json();
                 if (!result.success) {
-                    localStorage.removeItem('kb_token');
-                    localStorage.removeItem('kb_user');
-                    window.location.href = '/kb-login';
+                    localStorage.removeItem('agentToken');
+                    window.location.href = '/agent';
                     return;
                 }
-                
-                // Add logout button to header
-                const header = document.querySelector('.header');
-                const user = JSON.parse(localStorage.getItem('kb_user') || '{}');
-                header.innerHTML += `
-                    <div style="position: absolute; top: 20px; right: 20px; color: white; opacity: 0.9;">
-                        Welcome, ${user.name || 'User'} | 
-                        <a href="#" onclick="logout()" style="color: white; text-decoration: underline;">Logout</a>
-                    </div>
-                `;
                 
                 // Load initial data
                 loadStats();
@@ -409,9 +404,8 @@
 
         // Logout function
         function logout() {
-            localStorage.removeItem('kb_token');
-            localStorage.removeItem('kb_user');
-            window.location.href = '/kb-login';
+            localStorage.removeItem('agentToken');
+            window.location.href = '/agent';
         }
 
         // Make authenticated requests
@@ -430,9 +424,8 @@
             });
 
             if (response.status === 401) {
-                localStorage.removeItem('kb_token');
-                localStorage.removeItem('kb_user');
-                window.location.href = '/kb-login';
+                localStorage.removeItem('agentToken');
+                window.location.href = '/agent';
                 return null;
             }
 
