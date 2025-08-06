@@ -35,14 +35,24 @@ class AgentNotificationSystem {
         // Don't create connection if we're on agent dashboard (it has its own)
         if (window.location.pathname === '/agent') return;
 
+        // IMPORTANT FIX: Don't create connection on secondary pages if agent might have active session
+        // Check if this is a secondary page (intents, feedback) and agent might have active sessions
+        if (window.location.pathname === '/intents' || window.location.pathname === '/feedback') {
+            // Instead of creating WebSocket connection, just provide passive notification support
+            console.log('Agent is on secondary page - skipping WebSocket connection to avoid conflicts');
+            return;
+        }
+
         const wsUrl = `ws://${window.location.host}`;
         this.ws = new WebSocket(wsUrl);
 
         this.ws.onopen = () => {
+            // IMPORTANT FIX: Use different message type for passive monitoring vs active agent work
             this.ws.send(JSON.stringify({
-                type: 'agent_join',
+                type: 'agent_monitor', // Changed from 'agent_join' to avoid triggering customer notifications
                 agentId: this.user.id,
-                token: this.token
+                token: this.token,
+                passive: true // Indicate this is just for monitoring, not active chat handling
             }));
             this.isConnected = true;
         };
@@ -65,9 +75,13 @@ class AgentNotificationSystem {
     handleMessage(data) {
         switch(data.type) {
             case 'pending_request':
-                this.showNotification(data);
+                // Only show notifications if not on agent dashboard
+                if (window.location.pathname !== '/agent') {
+                    this.showNotification(data);
+                }
                 break;
             case 'customer_assigned':
+                // Redirect to agent dashboard for active session management
                 window.location.href = '/agent';
                 break;
         }
@@ -83,7 +97,7 @@ class AgentNotificationSystem {
                 <p>Position ${data.position} of ${data.totalInQueue}</p>
                 <p>"${data.lastMessage}"</p>
                 <div class="notification-actions">
-                    <button onclick="agentNotifications.acceptRequest('${data.sessionId}')" class="accept-btn">Accept</button>
+                    <button onclick="agentNotifications.acceptRequest('${data.sessionId}')" class="accept-btn">Accept & Switch to Dashboard</button>
                     <button onclick="agentNotifications.dismissNotification(this)" class="dismiss-btn">Dismiss</button>
                 </div>
             </div>
@@ -103,16 +117,9 @@ class AgentNotificationSystem {
     }
 
     acceptRequest(sessionId) {
-        if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-            this.ws.send(JSON.stringify({
-                type: 'accept_request',
-                sessionId: sessionId,
-                agentId: this.user.id
-            }));
-        }
-        
-        // Remove all notifications
-        document.querySelectorAll('.agent-notification').forEach(n => n.remove());
+        // Instead of trying to accept via WebSocket (which could cause conflicts),
+        // redirect to agent dashboard with session info
+        window.location.href = `/agent?accept=${sessionId}`;
     }
 
     showDesktopNotification(data) {
@@ -178,8 +185,10 @@ class AgentNotificationSystem {
     }
 }
 
-// Global instance
-window.agentNotifications = new AgentNotificationSystem();
+// Global instance - but only create if not on agent dashboard
+if (window.location.pathname !== '/agent') {
+    window.agentNotifications = new AgentNotificationSystem();
+}
 
 // Add CSS for notifications
 const style = document.createElement('style');
@@ -194,7 +203,7 @@ style.textContent = `
         box-shadow: 0 4px 20px rgba(0,0,0,0.3);
         padding: 1rem;
         z-index: 10000;
-        max-width: 300px;
+        max-width: 350px;
         animation: slideIn 0.3s ease;
     }
 
@@ -218,6 +227,7 @@ style.textContent = `
         display: flex;
         gap: 0.5rem;
         margin-top: 1rem;
+        flex-direction: column;
     }
 
     .accept-btn {
@@ -227,7 +237,7 @@ style.textContent = `
         padding: 0.5rem 1rem;
         border-radius: 4px;
         cursor: pointer;
-        flex: 1;
+        font-size: 0.9rem;
     }
 
     .dismiss-btn {
@@ -237,7 +247,6 @@ style.textContent = `
         padding: 0.5rem 1rem;
         border-radius: 4px;
         cursor: pointer;
-        flex: 1;
     }
 
     .accept-btn:hover {
