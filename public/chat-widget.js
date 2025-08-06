@@ -1119,15 +1119,15 @@
         idleDialog.style.display = 'none';
       }
       
-      // Set warning timer for 10 seconds
+      // Set warning timer for 10 minutes
       this.idleWarningTimer = setTimeout(() => {
         this.showIdleWarning();
-      }, 10 * 1000);
+      }, 10 * 60 * 1000);
       
-      // Set session end timer for 30 seconds
+      // Set session end timer for 30 seconds after warning
       this.idleTimer = setTimeout(() => {
         this.handleIdleTimeout();
-      }, 30 * 1000);
+      }, (10 * 60 * 1000) + (30 * 1000));
     }
 
     showIdleWarning() {
