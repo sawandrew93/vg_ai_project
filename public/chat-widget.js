@@ -121,7 +121,6 @@
         console.log('Restored', this.messages.length, 'messages');
       } else {
         this.addMessage("I can help you understand how our products and services can help you. Please ask me your question and I will do my best to answer. I can also connect you with a Vanguard sales representative.", 'bot', false);
-        this.addConnectButton();
       }
     }
 
@@ -167,8 +166,9 @@
               <input type="text" id="chat-input" placeholder="Type your message..." />
               <input type="file" id="file-input" style="display: none;" accept="image/*,.pdf,.doc,.docx,.txt">
               <div class="button-group">
+                <button id="file-upload" title="Attach file" style="display: none;">📎</button>
                 <button id="chat-send">Send</button>
-                <button id="file-upload" title="Attach file" style="display: none;">📁 Attach</button>
+                <button id="request-human" title="Connect with human support">👤</button>
               </div>
             </div>
             
@@ -452,6 +452,22 @@
           box-sizing: border-box;
         }
 
+        #file-upload {
+          background: #6c757d;
+          color: white;
+          padding: 12px;
+          border: none;
+          border-radius: 50%;
+          cursor: pointer;
+          font-size: 16px;
+          transition: all 0.3s ease;
+          width: 44px;
+          height: 44px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+
         #chat-send {
           flex: 1;
           padding: 12px 16px;
@@ -465,28 +481,19 @@
         }
 
         #request-human {
-          padding: 12px 16px;
           background: #28a745;
           color: white;
+          padding: 12px;
           border: none;
-          border-radius: 20px;
+          border-radius: 50%;
           cursor: pointer;
-          font-size: 12px;
+          font-size: 16px;
           transition: all 0.3s ease;
-          white-space: nowrap;
-          flex-shrink: 0;
-        }
-
-        #file-upload {
-          background: #17a2b8;
-          color: white;
-          padding: 12px 16px;
-          border: none;
-          border-radius: 20px;
-          cursor: pointer;
-          font-size: 14px;
-          transition: all 0.3s ease;
-          white-space: nowrap;
+          width: 44px;
+          height: 44px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
         }
 
         .file-preview {
@@ -778,6 +785,7 @@
       const fileInput = document.getElementById('file-input');
       const clearChat = document.getElementById('clear-chat');
       const endSession = document.getElementById('end-session');
+      const requestHuman = document.getElementById('request-human');
 
       toggle.addEventListener('click', () => this.toggleChat());
       close.addEventListener('click', () => this.closeChat());
@@ -785,6 +793,7 @@
       fileUpload.addEventListener('click', () => this.handleFileUpload());
       clearChat.addEventListener('click', () => this.clearChatHistory());
       endSession.addEventListener('click', () => this.endSession());
+      requestHuman.addEventListener('click', () => this.requestHuman());
 
       input.addEventListener('keypress', (e) => {
         if (e.key === 'Enter') {
@@ -835,7 +844,6 @@
         messagesContainer.innerHTML = '';
 
         this.addMessage("I can help you understand how our products and services can help you. Please ask me your question and I will do my best to answer. I can also connect you with a Vanguard sales representative.", 'bot', false);
-        this.addConnectButton();
 
         this.isConnectedToHuman = false;
         this.updateConnectionStatus('AI Assistant', 'Ready to help');
@@ -861,7 +869,6 @@
 
         this.addMessage('Session ended. Thank you for chatting with us!', 'system', false);
         this.addMessage("I can help you understand how our products and services can help you. Please ask me your question and I will do my best to answer. I can also connect you with a Vanguard sales representative.", 'bot', false);
-        this.addConnectButton();
 
         this.isConnectedToHuman = false;
         this.updateConnectionStatus('AI Assistant', 'Ready to help');
@@ -964,7 +971,6 @@
         case 'ai_response':
           this.hideTypingIndicator();
           this.addMessage(message, 'bot');
-          this.addConnectButton();
           if (data.sources && data.sources.length > 0) {
             console.log('Response sources:', data.sources);
           }
@@ -1181,25 +1187,7 @@
       return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
     }
 
-    addConnectButton() {
-      if (this.isConnectedToHuman) return;
-      
-      const messagesContainer = document.getElementById('chat-messages');
-      
-      const buttonDiv = document.createElement('div');
-      buttonDiv.className = 'message bot-message connect-button-message';
-      buttonDiv.innerHTML = `
-        <div class="message-content" style="text-align: center; padding: 8px;">
-          <button class="connect-btn" style="background: #28a745; color: white; border: none; padding: 8px 16px; border-radius: 20px; cursor: pointer; font-size: 12px;">Connect with Vanguard Sales Representative</button>
-        </div>
-      `;
-      
-      const button = buttonDiv.querySelector('.connect-btn');
-      button.addEventListener('click', () => this.showCustomerInfoDialog());
-      
-      messagesContainer.appendChild(buttonDiv);
-      messagesContainer.scrollTop = messagesContainer.scrollHeight;
-    }
+
 
     addMessage(message, sender, saveToStorage = true) {
       const messagesContainer = document.getElementById('chat-messages');
