@@ -84,6 +84,14 @@
                 <input type="text" id="countryFilter" placeholder="Enter country">
             </div>
             <div class="filter-group">
+                <label>Customer Name</label>
+                <input type="text" id="nameFilter" placeholder="Enter name">
+            </div>
+            <div class="filter-group">
+                <label>Customer Email</label>
+                <input type="text" id="emailFilter" placeholder="Enter email">
+            </div>
+            <div class="filter-group">
                 <label>&nbsp;</label>
                 <button onclick="applyFilters()" class="btn">Apply Filters</button>
             </div>
@@ -118,12 +126,14 @@
                         <th>Category</th>
                         <th>Confidence</th>
                         <th>Response Type</th>
+                        <th>Customer Name</th>
+                        <th>Email</th>
                         <th>Country</th>
                         <th>Session</th>
                     </tr>
                 </thead>
                 <tbody id="intentsTableBody">
-                    <tr><td colspan="8" class="loading">Loading intents...</td></tr>
+                    <tr><td colspan="10" class="loading">Loading intents...</td></tr>
                 </tbody>
             </table>
         </div>
@@ -146,12 +156,16 @@
                 const dateFrom = document.getElementById('dateFrom').value;
                 const dateTo = document.getElementById('dateTo').value;
                 const countryFilter = document.getElementById('countryFilter').value;
+                const nameFilter = document.getElementById('nameFilter').value;
+                const emailFilter = document.getElementById('emailFilter').value;
 
                 if (categoryFilter) params.append('intent_category', categoryFilter);
                 if (responseFilter) params.append('response_type', responseFilter);
                 if (dateFrom) params.append('date_from', dateFrom);
                 if (dateTo) params.append('date_to', dateTo);
                 if (countryFilter) params.append('customer_country', countryFilter);
+                if (nameFilter) params.append('customer_name', nameFilter);
+                if (emailFilter) params.append('customer_email', emailFilter);
 
                 const response = await fetch(`/api/intents?${params}`, {
                     headers: { 'Authorization': `Bearer ${token}` }
@@ -165,7 +179,7 @@
             } catch (error) {
                 console.error('Error loading intents:', error);
                 document.getElementById('intentsTableBody').innerHTML = 
-                    '<tr><td colspan="8" class="no-data">Error loading intents</td></tr>';
+                    '<tr><td colspan="10" class="no-data">Error loading intents</td></tr>';
             }
         }
 
@@ -177,7 +191,7 @@
             const tbody = document.getElementById('intentsTableBody');
             
             if (intents.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="8" class="no-data">No intents found</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="10" class="no-data">No intents found</td></tr>';
                 return;
             }
 
@@ -205,6 +219,8 @@
                             ${formatResponseType(intent.response_type)}
                         </span>
                     </td>
+                    <td>${(intent.customer_firstname && intent.customer_lastname) ? intent.customer_firstname + ' ' + intent.customer_lastname : '-'}</td>
+                    <td>${intent.customer_email || '-'}</td>
                     <td>${intent.customer_country || '-'}</td>
                     <td style="font-family: monospace; font-size: 0.8em;">${intent.session_id.substring(0, 12)}...</td>
                 </tr>

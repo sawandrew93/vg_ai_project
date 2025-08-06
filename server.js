@@ -974,6 +974,17 @@ async function handleHumanRequest(sessionId, customerInfo = null) {
       'human_request',
       customerInfo
     );
+  } else {
+    // Log human request without customer info
+    await knowledgeDB.logCustomerIntent(
+      sessionId,
+      'Customer requested human support',
+      'human_request',
+      'support',
+      0,
+      [],
+      'human_request'
+    );
   }
 
   // Get all agents with active WebSocket connections for notifications
@@ -1769,6 +1780,12 @@ app.get('/api/intents', verifyToken, async (req, res) => {
     }
     if (req.query.customer_country) {
       query = query.ilike('customer_country', `%${req.query.customer_country}%`);
+    }
+    if (req.query.customer_name) {
+      query = query.or(`customer_firstname.ilike.%${req.query.customer_name}%,customer_lastname.ilike.%${req.query.customer_name}%`);
+    }
+    if (req.query.customer_email) {
+      query = query.ilike('customer_email', `%${req.query.customer_email}%`);
     }
 
     const { data, error } = await query.range(offset, offset + limit - 1);
