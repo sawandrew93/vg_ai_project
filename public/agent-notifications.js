@@ -31,6 +31,9 @@ class AgentNotificationSystem {
 
     connectWebSocket() {
         if (this.isConnected) return;
+        
+        // Don't create connection if we're on agent dashboard (it has its own)
+        if (window.location.pathname === '/agent') return;
 
         const wsUrl = `ws://${window.location.host}`;
         this.ws = new WebSocket(wsUrl);

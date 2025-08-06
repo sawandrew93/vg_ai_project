@@ -4,7 +4,6 @@
     <title>Support Agent Dashboard</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="agent-dashboard.css">
-    <script src="agent-notifications.js"></script>
 </head>
 <body>
     <!-- Login Form -->
@@ -107,10 +106,29 @@
                     Notification.requestPermission();
                 }
 
-                // Initialize global notification system for sound
-                if (typeof AgentNotifications !== 'undefined') {
-                    this.globalNotifications = new AgentNotifications();
-                }
+                // Initialize sound-only notification system
+                this.soundSystem = {
+                    playNotificationSound: () => {
+                        try {
+                            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                            for (let i = 0; i < 3; i++) {
+                                const oscillator = audioContext.createOscillator();
+                                const gainNode = audioContext.createGain();
+                                oscillator.connect(gainNode);
+                                gainNode.connect(audioContext.destination);
+                                const startTime = audioContext.currentTime + (i * 0.4);
+                                oscillator.frequency.setValueAtTime(1000, startTime);
+                                oscillator.frequency.setValueAtTime(800, startTime + 0.1);
+                                gainNode.gain.setValueAtTime(0.6, startTime);
+                                gainNode.gain.exponentialRampToValueAtTime(0.01, startTime + 0.2);
+                                oscillator.start(startTime);
+                                oscillator.stop(startTime + 0.2);
+                            }
+                        } catch (error) {
+                            console.log('Could not play notification sound:', error);
+                        }
+                    }
+                };
 
                 // Check if already logged in
                 this.token = localStorage.getItem('agentToken');
@@ -356,10 +374,8 @@
                 // Show desktop notification and play sound
                 this.showDesktopNotification(data);
                 
-                // Use global notification system for sound
-                if (this.globalNotifications) {
-                    this.globalNotifications.playNotificationSound();
-                }
+                // Play notification sound
+                this.soundSystem.playNotificationSound();
             }
 
             acceptRequest(sessionId = null, data = null) {
