@@ -7,7 +7,7 @@
         serverUrl: options.serverUrl || 'ws://localhost:3000/',
         position: options.position || 'bottom-right',
         primaryColor: options.primaryColor || '#007bff',
-        title: options.title || 'Chat Support',
+        title: options.title || 'Get Vanguard guidance from our generative AI assistant or connect with a sales representative.',
         ...options
       };
 
@@ -166,7 +166,7 @@
               <input type="text" id="chat-input" placeholder="Type your message..." />
               <input type="file" id="file-input" style="display: none;" accept="image/*,.pdf,.doc,.docx,.txt">
               <div class="button-group">
-                <button id="file-upload" title="Attach file" style="display: none;">📎</button>
+                <button id="file-upload" title="Attach file" style="display: none;">📄</button>
                 <button id="chat-send">Send</button>
                 <button id="request-human" title="Connect with human support">👤</button>
               </div>
@@ -422,10 +422,10 @@
         }
 
         #file-upload {
-          background: #17a2b8;
-          color: #ffffff;
+          background: white;
+          color: #666;
           padding: 12px;
-          border: none;
+          border: 2px solid #ddd;
           border-radius: 50%;
           cursor: pointer;
           font-size: 16px;
