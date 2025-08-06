@@ -81,7 +81,7 @@
         const stateStr = localStorage.getItem('chat_connection_state');
         if (stateStr) {
           const state = JSON.parse(stateStr);
-          if (Date.now() - state.timestamp < 30 * 1000) {
+          if (Date.now() - state.timestamp < 15 * 1000) {
             this.isConnectedToHuman = state.isConnectedToHuman;
             console.log('Restored connection state:', state);
             return state;
@@ -906,9 +906,15 @@
 
       this.ws.onclose = (event) => {
         console.log('WebSocket disconnected. Code:', event.code, 'Reason:', event.reason);
+        
+        // Don't show connection lost message for normal closure or if we haven't sent any messages yet
+        if (event.code === 1000 || this.messages.length <= 1) {
+          return;
+        }
+        
         this.updateConnectionStatus('Disconnected', 'Connection lost', true);
 
-        if (event.code !== 1000 && this.reconnectAttempts < this.maxReconnectAttempts) {
+        if (this.reconnectAttempts < this.maxReconnectAttempts) {
           this.reconnectAttempts++;
           const delay = Math.min(1000 * this.reconnectAttempts, 10000);
 
@@ -917,7 +923,7 @@
             this.updateConnectionStatus('Reconnecting...', `Attempt ${this.reconnectAttempts}`);
             this.connectWebSocket();
           }, delay);
-        } else if (this.reconnectAttempts >= this.maxReconnectAttempts) {
+        } else {
           this.updateConnectionStatus('Connection Failed', 'Max reconnection attempts reached');
           this.addMessage('Connection lost. Please refresh the page to continue.', 'system');
         }
@@ -1017,6 +1023,14 @@
 
         case 'session_ended':
           this.addMessage(message, 'system');
+          break;
+
+        case 'session_timeout':
+          this.addMessage(message, 'system');
+          this.clearSession();
+          this.sessionId = this.getOrCreateSessionId();
+          this.isConnectedToHuman = false;
+          this.updateConnectionStatus('AI Assistant', 'Ready to help');
           break;
 
         case 'error':
