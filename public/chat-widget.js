@@ -302,19 +302,19 @@
           justify-content: space-between;
           align-items: flex-start;
           gap: 10px;
-          min-height: 60px;
+          min-height: 75px;
         }
 
         .chat-title {
           font-weight: 600;
           flex: 1;
           min-width: 0;
-          font-size: 0.9rem;
-          line-height: 1.2;
+          font-size: 0.85rem;
+          line-height: 1.3;
           overflow: hidden;
           text-overflow: ellipsis;
           display: -webkit-box;
-          -webkit-line-clamp: 2;
+          -webkit-line-clamp: 3;
           -webkit-box-orient: vertical;
         }
 
