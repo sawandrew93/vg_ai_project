@@ -157,7 +157,6 @@
                 <div class="status-indicator"></div>
               </div>
               <div class="chat-actions">
-                <button class="clear-chat-btn" id="clear-chat" title="Clear chat history">🗂️</button>
               </div>
             </div>
 
@@ -339,23 +338,7 @@
           gap: 5px;
         }
 
-        .clear-chat-btn, .end-session-btn {
-          background: none;
-          border: none;
-          color: #ff6b6b;
-          font-size: 16px;
-          cursor: pointer;
-          padding: 4px;
-          border-radius: 4px;
-          opacity: 0.9;
-          transition: all 0.2s ease;
-        }
 
-        .clear-chat-btn:hover, .end-session-btn:hover {
-          opacity: 1;
-          background: rgba(255,107,107,0.2);
-          color: #ff4757;
-        }
 
 
 
@@ -768,13 +751,11 @@
       const send = document.getElementById('chat-send');
       const fileUpload = document.getElementById('file-upload');
       const fileInput = document.getElementById('file-input');
-      const clearChat = document.getElementById('clear-chat');
       const requestHuman = document.getElementById('request-human');
 
       toggle.addEventListener('click', () => this.toggleChat());
       send.addEventListener('click', () => this.sendMessage());
       fileUpload.addEventListener('click', () => this.handleFileUpload());
-      clearChat.addEventListener('click', () => this.clearChatHistory());
       requestHuman.addEventListener('click', () => this.requestHuman());
 
       input.addEventListener('keypress', (e) => {
@@ -819,22 +800,7 @@
 
     }
 
-    clearChatHistory() {
-      if (confirm('Are you sure you want to clear the chat history? This cannot be undone.')) {
-        this.clearSession();
-        this.sessionId = this.getOrCreateSessionId();
 
-        const messagesContainer = document.getElementById('chat-messages');
-        messagesContainer.innerHTML = '';
-
-        this.addMessage("I can help you understand how our products and services can help you. Please ask me your question and I will do my best to answer. I can also connect you with a Vanguard sales representative.", 'bot', false);
-
-        this.isConnectedToHuman = false;
-        this.updateConnectionStatus('AI Assistant', 'Ready to help');
-
-        console.log('Chat history cleared, new session:', this.sessionId);
-      }
-    }
 
 
 
