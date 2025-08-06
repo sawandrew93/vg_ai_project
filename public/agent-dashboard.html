@@ -227,6 +227,11 @@
             }
 
             connectWebSocket() {
+                // Close existing connection if any
+                if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+                    this.ws.close();
+                }
+
                 this.updateConnectionStatus('connecting', 'Connecting to server...');
 
                 const wsUrl = `ws://${window.location.host}`;

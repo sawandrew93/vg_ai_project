@@ -769,16 +769,14 @@ function handleAcceptRequest(sessionId, agentId, acceptingWs = null) {
     return;
   }
 
-  // Always use the accepting WebSocket if provided to ensure fresh connection
-  const activeWs = acceptingWs || agentData.ws;
-  
-  // Update both agent data and conversation with current WebSocket
-  if (acceptingWs) {
+  // Only update WebSocket if a new one is provided and different from current
+  if (acceptingWs && acceptingWs !== agentData.ws) {
+    console.log(`Updating agent ${agentId} WebSocket connection`);
     agentData.ws = acceptingWs;
   }
 
   conversation.hasHuman = true;
-  conversation.agentWs = agentData.ws; // Use the updated WebSocket reference
+  conversation.agentWs = agentData.ws;
   conversation.assignedAgent = agentId;
   conversation.agentName = agentData.user.name;
 
