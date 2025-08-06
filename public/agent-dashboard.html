@@ -230,10 +230,74 @@
                 this.updateConnectionStatus('connecting', 'Connecting to server...');
 
                 const wsUrl = `ws://${window.location.host}`;
-                // ...existing code...
+                this.ws = new WebSocket(wsUrl);
+
+                this.ws.onopen = () => {
+                    this.ws.send(JSON.stringify({
+                        type: 'agent_join',
+                        agentId: this.user.id,
+                        token: this.token
+                    }));
+                };
+
+                this.ws.onmessage = (e) => {
+                    try {
+                        const data = JSON.parse(e.data);
+                        this.handleMessage(data);
+                    } catch (error) {
+                        console.error('Error parsing message:', error);
+                    }
+                };
+
+                this.ws.onclose = (e) => {
+                    this.updateConnectionStatus('disconnected', 'Connection lost - attempting to reconnect...');
+
+                    if (e.code === 1000) {
+                        this.logout();
+                        return;
+                    }
+
+                    setTimeout(() => this.connectWebSocket(), 3000);
+                };
+
+                this.ws.onerror = (err) => {
+                    console.error('WebSocket error:', err);
+                };
             }
 
-            // All methods below are now correctly inside the AgentDashboard class
+            handleMessage(data) {
+                switch(data.type) {
+                    case 'agent_status':
+                        this.updateConnectionStatus('connected', data.message);
+                        this.updateStats({
+                            waitingCustomers: data.waitingCustomers || 0,
+                            totalAgents: data.totalAgents || 1
+                        });
+                        break;
+                    case 'pending_request':
+                        this.showNotification(data);
+                        this.updateStats({
+                            queueCount: data.totalInQueue || data.position
+                        });
+                        break;
+                    case 'customer_assigned':
+                        this.acceptRequest(data);
+                        break;
+                    case 'customer_message':
+                        this.addMessage(`Customer: ${data.message}`, 'customer-msg');
+                        break;
+                    case 'request_taken':
+                        this.handleRequestTaken(data);
+                        break;
+                    case 'request_already_taken':
+                        this.handleRequestAlreadyTaken(data);
+                        break;
+                    case 'session_ended_by_customer':
+                        this.handleSessionEndedByCustomer(data);
+                        break;
+                    default:
+                        console.log('Unhandled message type:', data.type);
+                }
             }
 
             updateConnectionStatus(status, message) {
