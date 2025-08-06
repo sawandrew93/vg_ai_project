@@ -154,11 +154,11 @@
           <div class="chat-window" id="chat-window" style="display: none;">
             <div class="chat-header">
               <span class="chat-title">${this.options.title}</span>
-              <div class="connection-status" id="connection-status">
-                <span class="status-text">AI Assistant</span>
-                <div class="status-indicator"></div>
-              </div>
-              <div class="chat-actions">
+              <div class="header-right">
+                <div class="connection-status" id="connection-status">
+                  <span class="status-text">AI Assistant</span>
+                  <div class="status-indicator"></div>
+                </div>
               </div>
             </div>
 
@@ -318,20 +318,22 @@
           -webkit-box-orient: vertical;
         }
 
+        .header-right {
+          display: flex;
+          align-items: center;
+          flex-shrink: 0;
+        }
+
         .connection-status {
           display: flex;
           align-items: center;
-          gap: 8px;
-          flex: 1;
-          min-width: 0;
+          gap: 6px;
         }
 
         .status-text {
-          font-size: 12px;
+          font-size: 11px;
           opacity: 0.9;
           white-space: nowrap;
-          overflow: hidden;
-          text-overflow: ellipsis;
         }
 
         .status-indicator {
