@@ -296,17 +296,26 @@
         .chat-header {
           background: ${this.options.primaryColor};
           color: white;
-          padding: 16px;
+          padding: 12px 16px;
           border-radius: 12px 12px 0 0;
           display: flex;
           justify-content: space-between;
-          align-items: center;
+          align-items: flex-start;
           gap: 10px;
+          min-height: 60px;
         }
 
         .chat-title {
           font-weight: 600;
-          flex-shrink: 0;
+          flex: 1;
+          min-width: 0;
+          font-size: 0.9rem;
+          line-height: 1.2;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          display: -webkit-box;
+          -webkit-line-clamp: 2;
+          -webkit-box-orient: vertical;
         }
 
         .connection-status {
