@@ -88,6 +88,9 @@ class AgentNotificationSystem {
 
         document.body.appendChild(notification);
 
+        // Show desktop notification and play sound
+        this.showDesktopNotification(data);
+
         // Auto-dismiss after 30 seconds
         setTimeout(() => {
             if (notification.parentNode) {
@@ -107,6 +110,56 @@ class AgentNotificationSystem {
         
         // Remove all notifications
         document.querySelectorAll('.agent-notification').forEach(n => n.remove());
+    }
+
+    showDesktopNotification(data) {
+        // Request notification permission if not granted
+        if (Notification.permission === 'default') {
+            Notification.requestPermission();
+        }
+
+        // Show desktop notification if permission granted
+        if (Notification.permission === 'granted') {
+            const notification = new Notification('New Customer Request', {
+                body: `Position ${data.position}: "${data.lastMessage}"`,
+                icon: '/favicon.ico',
+                tag: 'customer-request',
+                requireInteraction: true
+            });
+
+            notification.onclick = () => {
+                window.focus();
+                this.acceptRequest(data.sessionId);
+                notification.close();
+            };
+        }
+
+        // Play notification sound
+        this.playNotificationSound();
+    }
+
+    playNotificationSound() {
+        try {
+            // Create audio context for notification sound
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+
+            oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
+            oscillator.frequency.setValueAtTime(600, audioContext.currentTime + 0.1);
+            oscillator.frequency.setValueAtTime(800, audioContext.currentTime + 0.2);
+
+            gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + 0.3);
+        } catch (error) {
+            console.log('Could not play notification sound:', error);
+        }
     }
 
     dismissNotification(button) {

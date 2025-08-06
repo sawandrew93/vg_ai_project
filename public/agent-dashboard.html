@@ -67,10 +67,7 @@
             </div>
         </div>
 
-        <div id="notification">
-            <strong id="notification-text"></strong>
-            <button id="accept-btn">Accept Chat</button>
-        </div>
+        <div id="notification" style="display: none;"></div>
 
         <div class="chat-container">
             <div id="agent-messages"></div>
@@ -355,21 +352,40 @@
             }
 
             showNotification(data) {
-                document.getElementById('notification').style.display = 'block';
-                const notificationText = document.getElementById('notification-text');
-                const acceptBtn = document.getElementById('accept-btn');
-
-                notificationText.innerHTML = `
-                    📞 <strong>New Request #${data.position}</strong> of ${data.totalInQueue || data.position}<br>
-                    💬 "${data.lastMessage}"
+                // Create notification popup similar to other pages
+                const notification = document.createElement('div');
+                notification.className = 'agent-notification';
+                notification.innerHTML = `
+                    <div class="notification-content">
+                        <h4>📞 New Customer Request</h4>
+                        <p>Position ${data.position} of ${data.totalInQueue}</p>
+                        <p>"${data.lastMessage}"</p>
+                        <div class="notification-actions">
+                            <button onclick="agentDashboard.acceptRequest('${data.sessionId}')" class="accept-btn">Accept</button>
+                            <button onclick="agentDashboard.dismissNotification(this)" class="dismiss-btn">Dismiss</button>
+                        </div>
+                    </div>
                 `;
 
-                acceptBtn.style.display = 'inline-block';
-                acceptBtn.disabled = false;
+                document.body.appendChild(notification);
                 this.currentSession = data.sessionId;
+
+                // Show desktop notification and play sound
+                this.showDesktopNotification(data);
+
+                // Auto-dismiss after 30 seconds
+                setTimeout(() => {
+                    if (notification.parentNode) {
+                        notification.remove();
+                    }
+                }, 30000);
             }
 
-            acceptRequest(data = null) {
+            acceptRequest(sessionId = null, data = null) {
+                if (sessionId) {
+                    this.currentSession = sessionId;
+                }
+                
                 if (!this.currentSession) return;
 
                 if (data) {
@@ -401,6 +417,9 @@
                         sessionId: this.currentSession,
                         agentId: this.user.id
                     }));
+                    
+                    // Remove all notifications
+                    document.querySelectorAll('.agent-notification').forEach(n => n.remove());
                 }
             }
 
@@ -471,36 +490,17 @@
 
             handleRequestTaken(data) {
                 if (this.currentSession === data.sessionId) {
-                    const notificationDiv = document.getElementById('notification');
-                    const notificationText = document.getElementById('notification-text');
-                    const acceptBtn = document.getElementById('accept-btn');
-
-                    notificationText.innerHTML = `⚠️ This request was accepted by <strong>${data.takenBy}</strong>`;
-                    acceptBtn.style.display = 'none';
-
-                    setTimeout(() => {
-                        notificationDiv.style.display = 'none';
-                        acceptBtn.style.display = 'inline-block';
-                        this.currentSession = null;
-                    }, 3000);
+                    // Remove existing notifications for this session
+                    document.querySelectorAll('.agent-notification').forEach(n => n.remove());
+                    this.currentSession = null;
                 }
-
                 this.updateStats({ queueCount: data.remainingQueue });
             }
 
             handleRequestAlreadyTaken(data) {
-                const notificationDiv = document.getElementById('notification');
-                const notificationText = document.getElementById('notification-text');
-                const acceptBtn = document.getElementById('accept-btn');
-
-                notificationText.innerHTML = `❌ ${data.message}`;
-                acceptBtn.style.display = 'none';
-
-                setTimeout(() => {
-                    notificationDiv.style.display = 'none';
-                    acceptBtn.style.display = 'inline-block';
-                    this.currentSession = null;
-                }, 3000);
+                // Remove existing notifications
+                document.querySelectorAll('.agent-notification').forEach(n => n.remove());
+                this.currentSession = null;
             }
 
             handleConnectionRestored(data) {
@@ -585,6 +585,63 @@
                 messagesDiv.scrollTop = messagesDiv.scrollHeight;
             }
 
+            showDesktopNotification(data) {
+                // Request notification permission if not granted
+                if (Notification.permission === 'default') {
+                    Notification.requestPermission();
+                }
+
+                // Show desktop notification if permission granted
+                if (Notification.permission === 'granted') {
+                    const notification = new Notification('New Customer Request', {
+                        body: `Position ${data.position}: "${data.lastMessage}"`,
+                        icon: '/favicon.ico',
+                        tag: 'customer-request',
+                        requireInteraction: true
+                    });
+
+                    notification.onclick = () => {
+                        window.focus();
+                        this.acceptRequest(data.sessionId);
+                        notification.close();
+                    };
+                }
+
+                // Play notification sound
+                this.playNotificationSound();
+            }
+
+            playNotificationSound() {
+                try {
+                    // Create audio context for notification sound
+                    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    const oscillator = audioContext.createOscillator();
+                    const gainNode = audioContext.createGain();
+
+                    oscillator.connect(gainNode);
+                    gainNode.connect(audioContext.destination);
+
+                    oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
+                    oscillator.frequency.setValueAtTime(600, audioContext.currentTime + 0.1);
+                    oscillator.frequency.setValueAtTime(800, audioContext.currentTime + 0.2);
+
+                    gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+
+                    oscillator.start(audioContext.currentTime);
+                    oscillator.stop(audioContext.currentTime + 0.3);
+                } catch (error) {
+                    console.log('Could not play notification sound:', error);
+                }
+            }
+
+            dismissNotification(button) {
+                const notification = button.closest('.agent-notification');
+                if (notification) {
+                    notification.remove();
+                }
+            }
+
             updateStats(stats) {
                 if (stats.queueCount !== undefined) {
                     document.getElementById('queue-count').textContent = stats.queueCount;
@@ -602,7 +659,8 @@
         }
 
         // Initialize the dashboard
-        new AgentDashboard();
+        const agentDashboard = new AgentDashboard();
+        window.agentDashboard = agentDashboard;
     </script>
 </body>
 </html>
