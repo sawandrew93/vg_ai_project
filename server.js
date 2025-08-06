@@ -44,6 +44,7 @@ const waitingQueue = [];
 const agentSessions = new Map();
 const sessionAgentMap = new Map();
 const customerTimeouts = new Map();
+const customerIdleTimeouts = new Map();
 const chatHistory = [];
 const agentReconnectTimeouts = new Map();
 
@@ -87,6 +88,7 @@ async function initializeAgentUsers() {
 
 // Constants
 const CUSTOMER_TIMEOUT = 10 * 60 * 1000;
+const CUSTOMER_IDLE_TIMEOUT = 10 * 60 * 1000; // 10 minutes idle timeout
 const AGENT_RECONNECT_WINDOW = 5 * 60 * 1000;
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-here';
 const SIMILARITY_THRESHOLD = 0.5; // Minimum similarity for knowledge base answers
@@ -345,6 +347,46 @@ function clearCustomerTimeout(sessionId) {
   }
 }
 
+function setupCustomerIdleTimeout(sessionId) {
+  clearCustomerIdleTimeout(sessionId);
+
+  const timeoutId = setTimeout(() => {
+    const conversation = conversations.get(sessionId);
+    if (conversation) {
+      console.log(`Customer ${sessionId} idle timeout - ending session`);
+      
+      if (conversation.customerWs && conversation.customerWs.readyState === WebSocket.OPEN) {
+        conversation.customerWs.send(JSON.stringify({
+          type: 'session_timeout',
+          message: 'Your session has ended due to inactivity. Feel free to start a new conversation!'
+        }));
+      }
+
+      if (conversation.hasHuman) {
+        handleEndChat(sessionId, 'customer_idle');
+      } else {
+        // Clean up AI-only session
+        conversations.delete(sessionId);
+        const queueIndex = waitingQueue.indexOf(sessionId);
+        if (queueIndex > -1) {
+          waitingQueue.splice(queueIndex, 1);
+        }
+      }
+    }
+    customerIdleTimeouts.delete(sessionId);
+  }, CUSTOMER_IDLE_TIMEOUT);
+
+  customerIdleTimeouts.set(sessionId, timeoutId);
+}
+
+function clearCustomerIdleTimeout(sessionId) {
+  const timeoutId = customerIdleTimeouts.get(sessionId);
+  if (timeoutId) {
+    clearTimeout(timeoutId);
+    customerIdleTimeouts.delete(sessionId);
+  }
+}
+
 function saveChatHistory(sessionId, endReason = 'completed') {
   const conversation = conversations.get(sessionId);
   if (!conversation) return;
@@ -425,6 +467,9 @@ function handleCustomerSessionRestore(ws, sessionId) {
   const conversation = conversations.get(sessionId);
   if (conversation) {
     conversation.customerWs = ws;
+    
+    // Reset idle timeout on session restore
+    setupCustomerIdleTimeout(sessionId);
 
     ws.send(JSON.stringify({
       type: 'session_restored',
@@ -462,6 +507,7 @@ function handleCustomerSessionRestore(ws, sessionId) {
     }));
 
     setupCustomerTimeout(sessionId);
+    setupCustomerIdleTimeout(sessionId);
     console.log(`New session ${sessionId} created for customer`);
   }
 }
@@ -1122,6 +1168,7 @@ wss.on('connection', (ws) => {
         console.log(`Customer ${sessionId} disconnected`);
 
         clearCustomerTimeout(sessionId);
+        clearCustomerIdleTimeout(sessionId);
 
         const queueIndex = waitingQueue.indexOf(sessionId);
         if (queueIndex > -1) {
@@ -1373,6 +1420,8 @@ app.get('/api/knowledge-base/stats', verifyToken, async (req, res) => {
 async function saveFeedbackToDatabase(data) {
   try {
     const conversation = conversations.get(data.sessionId);
+    const historyRecord = chatHistory.find(h => h.sessionId === data.sessionId);
+    
     const { error } = await supabase
       .from('customer_feedback')
       .insert({
@@ -1382,8 +1431,8 @@ async function saveFeedbackToDatabase(data) {
         rating: data.rating,
         feedback_text: data.feedback || null,
         interaction_type: data.interactionType || 'human_agent',
-        agent_id: conversation?.assignedAgent || null,
-        agent_name: conversation?.agentName || null
+        agent_id: conversation?.assignedAgent || historyRecord?.agentId || null,
+        agent_name: conversation?.agentName || historyRecord?.agentName || null
       });
 
     if (error) {
