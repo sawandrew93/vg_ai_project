@@ -157,9 +157,7 @@
                 <div class="status-indicator"></div>
               </div>
               <div class="chat-actions">
-                <button class="clear-chat-btn" id="clear-chat" title="Clear chat history">🗑️</button>
-                <button class="end-session-btn" id="end-session" title="End session">❌</button>
-                <button class="chat-close" id="chat-close">×</button>
+                <button class="clear-chat-btn" id="clear-chat" title="Clear chat history">🗂️</button>
               </div>
             </div>
 
@@ -372,23 +370,7 @@
           color: #ff4757;
         }
 
-        .end-session-btn {
-          font-size: 14px;
-        }
 
-        .chat-close {
-          background: none;
-          border: none;
-          color: white;
-          font-size: 24px;
-          cursor: pointer;
-          padding: 0;
-          width: 30px;
-          height: 30px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-        }
 
         @keyframes pulse {
           0% { opacity: 1; }
@@ -795,21 +777,17 @@
 
     addEventListeners() {
       const toggle = document.getElementById('chat-toggle');
-      const close = document.getElementById('chat-close');
       const input = document.getElementById('chat-input');
       const send = document.getElementById('chat-send');
       const fileUpload = document.getElementById('file-upload');
       const fileInput = document.getElementById('file-input');
       const clearChat = document.getElementById('clear-chat');
-      const endSession = document.getElementById('end-session');
       const requestHuman = document.getElementById('request-human');
 
       toggle.addEventListener('click', () => this.toggleChat());
-      close.addEventListener('click', () => this.closeChat());
       send.addEventListener('click', () => this.sendMessage());
       fileUpload.addEventListener('click', () => this.handleFileUpload());
       clearChat.addEventListener('click', () => this.clearChatHistory());
-      endSession.addEventListener('click', () => this.endSession());
       requestHuman.addEventListener('click', () => this.requestHuman());
 
       input.addEventListener('keypress', (e) => {
@@ -882,27 +860,7 @@
       }
     }
 
-    endSession() {
-      if (confirm('Are you sure you want to end this session?')) {
-        if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-          this.ws.send(JSON.stringify({
-            type: 'end_session',
-            sessionId: this.sessionId
-          }));
-        }
 
-        this.clearSession();
-        this.sessionId = this.getOrCreateSessionId();
-
-        const messagesContainer = document.getElementById('chat-messages');
-        messagesContainer.innerHTML = '';
-
-        this.addMessage('Session ended. Thank you for chatting with us!', 'system', false);
-
-        this.isConnectedToHuman = false;
-        this.updateConnectionStatus('AI Assistant', 'Ready to help');
-      }
-    }
 
     connectWebSocket() {
       let wsUrl = this.options.serverUrl;
@@ -1133,11 +1091,7 @@
       window.style.display = this.isOpen ? 'flex' : 'none';
     }
 
-    closeChat() {
-      const window = document.getElementById('chat-window');
-      this.isOpen = false;
-      window.style.display = 'none';
-    }
+
 
     sendMessage() {
       const input = document.getElementById('chat-input');
