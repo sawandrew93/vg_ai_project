@@ -769,16 +769,16 @@ function handleAcceptRequest(sessionId, agentId, acceptingWs = null) {
     return;
   }
 
-  // Use the accepting WebSocket if provided, otherwise use stored one
+  // Always use the accepting WebSocket if provided to ensure fresh connection
   const activeWs = acceptingWs || agentData.ws;
   
-  // Update agent data with current WebSocket
+  // Update both agent data and conversation with current WebSocket
   if (acceptingWs) {
     agentData.ws = acceptingWs;
   }
 
   conversation.hasHuman = true;
-  conversation.agentWs = activeWs;
+  conversation.agentWs = agentData.ws; // Use the updated WebSocket reference
   conversation.assignedAgent = agentId;
   conversation.agentName = agentData.user.name;
 
@@ -811,8 +811,8 @@ function handleAcceptRequest(sessionId, agentId, acceptingWs = null) {
     }));
   }
 
-  if (activeWs && activeWs.readyState === WebSocket.OPEN) {
-    activeWs.send(JSON.stringify({
+  if (agentData.ws && agentData.ws.readyState === WebSocket.OPEN) {
+    agentData.ws.send(JSON.stringify({
       type: 'customer_assigned',
       sessionId,
       history: conversation.messages,
@@ -827,6 +827,9 @@ function handleAcceptRequest(sessionId, agentId, acceptingWs = null) {
         "Your issue has been resolved. Is there anything else you need help with?"
       ]
     }));
+    console.log(`✅ Customer assigned message sent to agent ${agentData.user.name}`);
+  } else {
+    console.log(`❌ Agent WebSocket not available for ${agentData.user.name}`);
   }
 
   console.log(`Agent ${agentData.user.name} accepted request for session ${sessionId}. Queue now: ${waitingQueue.length}`);
