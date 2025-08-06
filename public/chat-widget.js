@@ -18,6 +18,8 @@
       this.isConnectedToHuman = false;
       this.reconnectAttempts = 0;
       this.maxReconnectAttempts = 10;
+      this.idleTimer = null;
+      this.lastActivity = Date.now();
 
       this.init();
     }
@@ -97,6 +99,7 @@
       this.createWidget();
       this.restoreMessages();
       this.connectWebSocket();
+      this.startIdleTimer();
 
       const connectionState = this.loadConnectionState();
       if (connectionState) {
@@ -206,6 +209,18 @@
                 <div class="handoff-buttons">
                   <button id="handoff-yes" class="handoff-btn handoff-yes">Yes</button>
                   <button id="handoff-no" class="handoff-btn handoff-no">No</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Idle Timeout Dialog -->
+            <div id="idle-timeout-dialog" class="handoff-dialog" style="display: none;">
+              <div class="handoff-content">
+                <h4>Session Timeout</h4>
+                <p>You've been idle for a while. Would you like to provide feedback before ending the session?</p>
+                <div class="handoff-buttons">
+                  <button id="idle-feedback-btn" class="handoff-btn handoff-yes">Give Feedback</button>
+                  <button id="idle-continue-btn" class="handoff-btn handoff-no">Continue Session</button>
                 </div>
               </div>
             </div>
@@ -341,18 +356,19 @@
         .clear-chat-btn, .end-session-btn {
           background: none;
           border: none;
-          color: white;
+          color: #ff6b6b;
           font-size: 16px;
           cursor: pointer;
           padding: 4px;
           border-radius: 4px;
-          opacity: 0.8;
+          opacity: 0.9;
           transition: all 0.2s ease;
         }
 
         .clear-chat-btn:hover, .end-session-btn:hover {
           opacity: 1;
-          background: rgba(255,255,255,0.1);
+          background: rgba(255,107,107,0.2);
+          color: #ff4757;
         }
 
         .end-session-btn {
@@ -453,7 +469,7 @@
         }
 
         #file-upload {
-          background: #6c757d;
+          background: #007bff;
           color: white;
           padding: 12px;
           border: none;
@@ -833,6 +849,15 @@
       document.getElementById('customer-info-cancel').addEventListener('click', () => {
         this.hideCustomerInfoDialog();
       });
+
+      // Idle timeout dialog event listeners
+      document.getElementById('idle-feedback-btn').addEventListener('click', () => {
+        this.handleIdleFeedback();
+      });
+
+      document.getElementById('idle-continue-btn').addEventListener('click', () => {
+        this.handleIdleContinue();
+      });
     }
 
     clearChatHistory() {
@@ -1037,6 +1062,11 @@
           this.sessionId = this.getOrCreateSessionId();
           this.isConnectedToHuman = false;
           this.updateConnectionStatus('AI Assistant', 'Ready to help');
+          
+          // Clear chat messages after timeout
+          const messagesContainer = document.getElementById('chat-messages');
+          messagesContainer.innerHTML = '';
+          this.addMessage("I can help you understand how our products and services can help you. Please ask me your question and I will do my best to answer. I can also connect you with a Vanguard sales representative.", 'bot', false);
           break;
 
         case 'error':
@@ -1112,6 +1142,7 @@
 
       if (!message) return;
 
+      this.resetIdleTimer();
       this.addMessage(message, 'user');
       input.value = '';
 
@@ -1129,6 +1160,45 @@
         this.hideTypingIndicator();
         this.addMessage('Connection lost. Trying to reconnect...', 'system');
       }
+    }
+
+    startIdleTimer() {
+      this.resetIdleTimer();
+    }
+
+    resetIdleTimer() {
+      this.lastActivity = Date.now();
+      if (this.idleTimer) {
+        clearTimeout(this.idleTimer);
+      }
+      this.idleTimer = setTimeout(() => {
+        this.showIdleTimeoutDialog();
+      }, 15000);
+    }
+
+    showIdleTimeoutDialog() {
+      document.getElementById('idle-timeout-dialog').style.display = 'block';
+    }
+
+    handleIdleFeedback() {
+      document.getElementById('idle-timeout-dialog').style.display = 'none';
+      this.showSatisfactionSurvey({
+        message: 'How was your experience?',
+        options: [
+          { label: '😊 Excellent', value: 5 },
+          { label: '🙂 Good', value: 4 },
+          { label: '😐 Average', value: 3 },
+          { label: '🙁 Poor', value: 2 },
+          { label: '😞 Very Poor', value: 1 }
+        ],
+        sessionId: this.sessionId,
+        interactionType: 'idle_timeout'
+      });
+    }
+
+    handleIdleContinue() {
+      document.getElementById('idle-timeout-dialog').style.display = 'none';
+      this.resetIdleTimer();
     }
 
     requestHuman() {
@@ -1345,6 +1415,17 @@
           }
 
           this.addMessage('Thank you for your feedback!', 'system');
+          
+          // Clear chat if this was idle timeout feedback
+          if (data.interactionType === 'idle_timeout') {
+            setTimeout(() => {
+              this.clearSession();
+              this.sessionId = this.getOrCreateSessionId();
+              const messagesContainer = document.getElementById('chat-messages');
+              messagesContainer.innerHTML = '';
+              this.addMessage("I can help you understand how our products and services can help you. Please ask me your question and I will do my best to answer. I can also connect you with a Vanguard sales representative.", 'bot', false);
+            }, 2000);
+          }
         }
 
         // Clear form
