@@ -81,7 +81,7 @@
         const stateStr = localStorage.getItem('chat_connection_state');
         if (stateStr) {
           const state = JSON.parse(stateStr);
-          if (Date.now() - state.timestamp < 10 * 60 * 1000) {
+          if (Date.now() - state.timestamp < 30 * 1000) {
             this.isConnectedToHuman = state.isConnectedToHuman;
             console.log('Restored connection state:', state);
             return state;
