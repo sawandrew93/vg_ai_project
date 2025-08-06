@@ -19,7 +19,9 @@
       this.reconnectAttempts = 0;
       this.maxReconnectAttempts = 10;
       this.idleTimer = null;
+      this.idleWarningTimer = null;
       this.lastActivity = Date.now();
+      this.idleWarningShown = false;
 
       this.init();
     }
@@ -206,6 +208,18 @@
                 <div class="handoff-buttons">
                   <button id="handoff-yes" class="handoff-btn handoff-yes">Yes</button>
                   <button id="handoff-no" class="handoff-btn handoff-no">No</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Idle Warning Dialog -->
+            <div id="idle-warning-dialog" class="handoff-dialog" style="display: none;">
+              <div class="handoff-content">
+                <h4>Are you still there?</h4>
+                <p>You've been inactive for a while. Would you like to continue this conversation?</p>
+                <div class="handoff-buttons">
+                  <button id="idle-continue" class="handoff-btn handoff-yes">Continue</button>
+                  <button id="idle-end" class="handoff-btn handoff-no">End Session</button>
                 </div>
               </div>
             </div>
@@ -770,6 +784,10 @@
         }
       });
 
+      // Reset idle timer on any user activity
+      input.addEventListener('input', () => this.resetIdleTimer());
+      input.addEventListener('focus', () => this.resetIdleTimer());
+
       fileInput.addEventListener('change', (e) => {
         const file = e.target.files[0];
         if (file) {
@@ -801,6 +819,15 @@
 
       document.getElementById('customer-info-cancel').addEventListener('click', () => {
         this.hideCustomerInfoDialog();
+      });
+
+      // Idle warning dialog event listeners
+      document.getElementById('idle-continue').addEventListener('click', () => {
+        this.handleIdleContinue();
+      });
+
+      document.getElementById('idle-end').addEventListener('click', () => {
+        this.handleIdleEnd();
       });
 
 
@@ -1076,12 +1103,86 @@
 
     resetIdleTimer() {
       this.lastActivity = Date.now();
+      this.idleWarningShown = false;
+      
+      // Clear existing timers
       if (this.idleTimer) {
         clearTimeout(this.idleTimer);
       }
+      if (this.idleWarningTimer) {
+        clearTimeout(this.idleWarningTimer);
+      }
+      
+      // Hide idle warning dialog if shown
+      const idleDialog = document.getElementById('idle-warning-dialog');
+      if (idleDialog) {
+        idleDialog.style.display = 'none';
+      }
+      
+      // Set warning timer for 10 seconds
+      this.idleWarningTimer = setTimeout(() => {
+        this.showIdleWarning();
+      }, 10 * 1000);
+      
+      // Set session end timer for 30 seconds
       this.idleTimer = setTimeout(() => {
-        this.handleSessionTimeout();
-      }, 60 * 60 * 1000);
+        this.handleIdleTimeout();
+      }, 30 * 1000);
+    }
+
+    showIdleWarning() {
+      if (this.idleWarningShown) return;
+      this.idleWarningShown = true;
+      
+      const idleDialog = document.getElementById('idle-warning-dialog');
+      if (idleDialog) {
+        idleDialog.style.display = 'block';
+      }
+    }
+
+    handleIdleTimeout() {
+      // Only end session if warning dialog is still shown (user didn't respond)
+      if (this.idleWarningShown) {
+        this.handleIdleEnd();
+      }
+    }
+
+    handleIdleContinue() {
+      // User wants to continue - reset timers and hide dialog
+      const idleDialog = document.getElementById('idle-warning-dialog');
+      if (idleDialog) {
+        idleDialog.style.display = 'none';
+      }
+      this.resetIdleTimer();
+      this.addMessage('Great! I\'m here to help. What can I assist you with?', 'bot', false);
+    }
+
+    handleIdleEnd() {
+      // User chose to end session or timeout occurred
+      const idleDialog = document.getElementById('idle-warning-dialog');
+      if (idleDialog) {
+        idleDialog.style.display = 'none';
+      }
+      
+      // End session due to inactivity
+      if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+        this.ws.send(JSON.stringify({
+          type: 'end_session',
+          sessionId: this.sessionId,
+          reason: 'idle_timeout'
+        }));
+      }
+      
+      this.addMessage('Session ended due to inactivity. Feel free to start a new conversation!', 'system', false);
+      this.clearSession();
+      this.sessionId = this.getOrCreateSessionId();
+      this.isConnectedToHuman = false;
+      this.updateConnectionStatus('AI Assistant', 'Ready to help');
+      
+      // Clear chat messages
+      const messagesContainer = document.getElementById('chat-messages');
+      messagesContainer.innerHTML = '';
+      this.addMessage("I can help you understand how our products and services can help you. Please ask me your question and I will do my best to answer. I can also connect you with a Vanguard sales representative.", 'bot', false);
     }
 
     handleSessionTimeout() {

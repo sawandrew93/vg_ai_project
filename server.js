@@ -88,7 +88,8 @@ async function initializeAgentUsers() {
 
 // Constants
 const CUSTOMER_TIMEOUT = 10 * 60 * 1000;
-const CUSTOMER_IDLE_TIMEOUT = 60 * 60 * 1000; // 1 hour idle timeout
+const CUSTOMER_IDLE_WARNING = 10 * 1000; // 10 seconds for idle warning
+const CUSTOMER_IDLE_TIMEOUT = 30 * 1000; // 30 seconds total idle timeout
 const AGENT_RECONNECT_WINDOW = 5 * 60 * 1000;
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-here';
 const SIMILARITY_THRESHOLD = 0.5; // Minimum similarity for knowledge base answers
