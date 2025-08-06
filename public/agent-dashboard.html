@@ -84,6 +84,75 @@
         </div>
     </div>
 
+    <style>
+        .agent-notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: white;
+            border: 2px solid #007bff;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            padding: 1rem;
+            z-index: 99999;
+            max-width: 300px;
+            animation: slideIn 0.3s ease;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        .agent-notification .notification-content h4 {
+            margin: 0 0 0.5rem 0;
+            color: #007bff;
+            font-size: 1rem;
+        }
+
+        .agent-notification .notification-content p {
+            margin: 0.25rem 0;
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        .agent-notification .notification-actions {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+
+        .agent-notification .accept-btn {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+            flex: 1;
+            font-size: 0.9rem;
+        }
+
+        .agent-notification .dismiss-btn {
+            background: #6c757d;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+            flex: 1;
+            font-size: 0.9rem;
+        }
+
+        .agent-notification .accept-btn:hover {
+            background: #218838;
+        }
+
+        .agent-notification .dismiss-btn:hover {
+            background: #5a6268;
+        }
+    </style>
     <script>
         class AgentDashboard {
             constructor() {
@@ -118,7 +187,6 @@
 
                 // Dashboard
                 document.getElementById('logout-btn').addEventListener('click', () => this.logout());
-                document.getElementById('accept-btn').addEventListener('click', () => this.acceptRequest());
                 document.getElementById('send-btn').addEventListener('click', () => this.sendMessage());
                 document.getElementById('agent-input').addEventListener('keypress', (e) => {
                     if (e.key === 'Enter') this.sendMessage();

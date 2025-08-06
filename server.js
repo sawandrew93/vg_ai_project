@@ -978,21 +978,7 @@ async function handleWebSocketMessage(ws, data) {
         handleAgentJoin(ws, data);
         break;
       case 'agent_message':
-        // Validate that the agent is still assigned to this session
-        const agentConversation = conversations.get(data.sessionId);
-        if (agentConversation && agentConversation.hasHuman && agentConversation.assignedAgent) {
-          handleAgentMessage(data.sessionId, data.message);
-        } else {
-          console.log(`Agent attempted to send message to ended session: ${data.sessionId}`);
-          // Notify agent that session has ended
-          if (ws && ws.readyState === WebSocket.OPEN) {
-            ws.send(JSON.stringify({
-              type: 'session_no_longer_active',
-              sessionId: data.sessionId,
-              message: 'This session is no longer active. The customer may have ended the conversation.'
-            }));
-          }
-        }
+        handleAgentMessage(data.sessionId, data.message);
         break;
       case 'request_human':
         await handleHumanRequest(data.sessionId);
